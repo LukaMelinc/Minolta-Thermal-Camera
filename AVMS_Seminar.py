@@ -2,7 +2,7 @@ import serial
 import serial.tools.list_ports
 import time
 import fluke
-import cyclopse
+import cyclops
 
 def list_serial_ports():
     ports = serial.tools.list_ports.comports()
@@ -16,11 +16,11 @@ def list_serial_ports():
 if __name__ == "__main__":
 
     fluke = fluke.Fluke()
-    cyclopse = cyclopse.Cyclopse()
+    cyclops = cyclops.Cyclops()
 
     fluke.open_serial_fluke()
-    cyclopse.open_serial_cyclopse()
+    cyclops.open_serial_cyclops()
     #fluke.FlukeRegisterReset()
     #fluke.FlukeID()
     #fluke.FlukeOutDataSet(0)
-    cyclopse.CyclopseGetTemp()
+    cyclops.CyclopsGetTemp()
