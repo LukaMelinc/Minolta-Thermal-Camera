@@ -1,0 +1,2 @@
+Seminarska naloga pri predmetu Avtomatizirani virtualni merilni sistemi na drugi stopnji študija elektrotehnike na ULFE - Avtomatika in Informatika. 
+Program je namenjen komunikaciji s pirometrom in kalibratorejm (uporabljenega za testiranje meritev). Omogoča spreminjanje nastavitev, izvajanje meritev in njihovo analizo.
