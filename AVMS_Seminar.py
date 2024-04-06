@@ -4,6 +4,7 @@ import time
 import fluke
 import cyclops
 
+# List all available serial ports
 def list_serial_ports():
     ports = serial.tools.list_ports.comports()
     print("Available Serial Ports:")
@@ -15,12 +16,15 @@ def list_serial_ports():
 
 if __name__ == "__main__":
 
+    # Declare classes #
     fluke = fluke.Fluke()
     cyclops = cyclops.Cyclops()
 
-    fluke.open_serial_fluke()
-    cyclops.open_serial_cyclops()
-    #fluke.FlukeRegisterReset()
-    #fluke.FlukeID()
-    #fluke.FlukeOutDataSet(0)
+    # Open serial communication with devices #
+    fluke.FlukeOpenSerial("COM5", 9600)
+    cyclops.CyclopsOpenSerial("COM3", 4800)
+
+
+
+
     cyclops.CyclopsGetTemp()
