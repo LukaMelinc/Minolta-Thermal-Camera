@@ -1,36 +1,54 @@
 import tkinter as tk
-import tkinter.font as tkFont
+from tkinter import ttk
+import datetime
 
-class GUI:
-    def __init__(self, root):
-        #setting title
-        root.title("undefined")
-        #setting window size
-        width=600
-        height=500
-        screenwidth = root.winfo_screenwidth()
-        screenheight = root.winfo_screenheight()
-        alignstr = '%dx%d+%d+%d' % (width, height, (screenwidth - width) / 2, (screenheight - height) / 2)
-        root.geometry(alignstr)
-        root.resizable(width=False, height=False)
+# Function to display inputs
+def display_inputs():
+    print("Port:", port_var.get())
+    print("Baudrate:", baudrate_var.get())
+    print("Temperature:", temperature_var.get())
+    print("Standard Deviation:", stddev_var.get())
+    print("Emissivity:", emissivity_var.get())
+    print("Temperature Difference:", temp_diff_var.get())
+    # Here, you would add your code to handle these inputs, such as serial communication or calculations.
 
-        GButton_948=tk.Button(root)
-        GButton_948["bg"] = "#f0f0f0"
-        ft = tkFont.Font(family='Times',size=10)
-        GButton_948["font"] = ft
-        GButton_948["fg"] = "#000000"
-        GButton_948["justify"] = "center"
-        GButton_948["text"] = "Button"
-        GButton_948.place(x=60,y=70,width=70,height=25)
-        GButton_948["command"] = self.GButton_948_command
+# Creating main window
+root = tk.Tk()
+root.title("Serial Communication GUI")
 
-        GLabel_161=tk.Label(root)
-        ft = tkFont.Font(family='Times',size=10)
-        GLabel_161["font"] = ft
-        GLabel_161["fg"] = "#333333"
-        GLabel_161["justify"] = "center"
-        GLabel_161["text"] = "label"
-        GLabel_161.place(x=60,y=30,width=70,height=25)
+# Variables
+port_var = tk.StringVar()
+baudrate_var = tk.IntVar()
+print(baudrate_var)
+temperature_var = tk.DoubleVar()
+stddev_var = tk.DoubleVar()
+emissivity_var = tk.DoubleVar()
+temp_diff_var = tk.DoubleVar()
 
-    def GButton_948_command(self):
-        print("command")
+# Layout
+tk.Label(root, text="Port:").grid(row=0, column=0, sticky="w")
+tk.Entry(root, textvariable=port_var).grid(row=0, column=1)
+
+tk.Label(root, text="Baudrate:").grid(row=1, column=0, sticky="w")
+tk.Entry(root, textvariable=baudrate_var).grid(row=1, column=1)
+
+tk.Label(root, text="Temperature (°C):").grid(row=2, column=0, sticky="w")
+tk.Entry(root, textvariable=temperature_var).grid(row=2, column=1)
+
+tk.Label(root, text="Standard Deviation:").grid(row=3, column=0, sticky="w")
+tk.Entry(root, textvariable=stddev_var).grid(row=3, column=1)
+
+tk.Label(root, text="Emissivity:").grid(row=4, column=0, sticky="w")
+tk.Entry(root, textvariable=emissivity_var).grid(row=4, column=1)
+
+tk.Label(root, text="Temperature Difference (°C):").grid(row=5, column=0, sticky="w")
+tk.Entry(root, textvariable=temp_diff_var).grid(row=5, column=1)
+
+# Time and Date
+time_date_label = ttk.Label(root, text=f"Time and Date: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+time_date_label.grid(row=6, column=0, columnspan=2)
+
+# Button to display inputs
+tk.Button(root, text="Submit", command=display_inputs).grid(row=7, column=0, columnspan=2)
+
+root.mainloop()
