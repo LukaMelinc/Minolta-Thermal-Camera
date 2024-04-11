@@ -19,7 +19,6 @@ root.title("Serial Communication GUI")
 # Variables
 port_var = tk.StringVar()
 baudrate_var = tk.IntVar()
-print(baudrate_var)
 temperature_var = tk.DoubleVar()
 stddev_var = tk.DoubleVar()
 emissivity_var = tk.DoubleVar()
