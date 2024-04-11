@@ -3,6 +3,8 @@ import serial.tools.list_ports
 import time
 import fluke
 import cyclops
+import GUI
+import tkinter as tk
 
 # List all available serial ports
 def list_serial_ports():
@@ -19,6 +21,10 @@ if __name__ == "__main__":
     # Declare classes #
     fluke = fluke.Fluke()
     cyclops = cyclops.Cyclops()
+    root = tk.Tk()
+    gui = GUI.GUI(root)
+
+    root.mainloop()
 
     # Open serial communication with devices #
     fluke.FlukeOpenSerial("COM5", 9600)
