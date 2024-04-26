@@ -173,7 +173,7 @@ class App:
         GCombobox_baudrate = ttk.Combobox(root, textvariable=self.baudrate_var, state='readonly')
         GCombobox_baudrate['values'] = ("COM3", "COM4")
         GCombobox_baudrate.current(0)  # set selection
-        GCombobox_baudrate.place(x=490,y=300,width=80,height=25)
+        GCombobox_baudrate.place(x=500,y=300,width=80,height=25)
         
 
         # time
