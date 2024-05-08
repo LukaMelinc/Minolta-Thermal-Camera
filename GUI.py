@@ -1,53 +1,340 @@
-import tkinter as tk
-from tkinter import ttk
+from PyQt6 import uic
+from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QWidget
+from PyQt6.QtCore import QTimer, QDateTime
 import datetime
+import serial
+import serial.tools.list_ports
+import sys
+import numpy as np
+import matplotlib.pyplot as plt
+import pyqtgraph as pg
+import time
+import csv
 
-# Function to display inputs
-def display_inputs():
-    print("Port:", port_var.get())
-    print("Baudrate:", baudrate_var.get())
-    print("Temperature:", temperature_var.get())
-    print("Standard Deviation:", stddev_var.get())
-    print("Emissivity:", emissivity_var.get())
-    print("Temperature Difference:", temp_diff_var.get())
-    # Here, you would add your code to handle these inputs, such as serial communication or calculations.
+import fluke
+import cyclops
 
-# Creating main window
-root = tk.Tk()
-root.title("Serial Communication GUI")
+# INFO:
+"""
+    # Open serial communication with devices #
+     - fluke.FlukeOpenSerial("COM5", 9600)
+     - cyclops.CyclopsOpenSerial("COM3", 4800)
 
-# Variables
-port_var = tk.StringVar()
-baudrate_var = tk.IntVar()
-temperature_var = tk.DoubleVar()
-stddev_var = tk.DoubleVar()
-emissivity_var = tk.DoubleVar()
-temp_diff_var = tk.DoubleVar()
+     # Error: "isModal" or "setSizeGripEnabled" -> delete "modal" or "setSizeGrip" in .ui files
 
-# Layout
-tk.Label(root, text="Port:").grid(row=0, column=0, sticky="w")
-tk.Entry(root, textvariable=port_var).grid(row=0, column=1)
+"""
 
-tk.Label(root, text="Baudrate:").grid(row=1, column=0, sticky="w")
-tk.Entry(root, textvariable=baudrate_var).grid(row=1, column=1)
+##################################################################
+########################## ERROR WINDOW ##########################
+##################################################################
 
-tk.Label(root, text="Temperature (°C):").grid(row=2, column=0, sticky="w")
-tk.Entry(root, textvariable=temperature_var).grid(row=2, column=1)
+Ui_ErrorWindow, BaseClass = uic.loadUiType("errorWindow.ui")
 
-tk.Label(root, text="Standard Deviation:").grid(row=3, column=0, sticky="w")
-tk.Entry(root, textvariable=stddev_var).grid(row=3, column=1)
+class ErrorWindow(QMainWindow, Ui_ErrorWindow):
+    def __init__(self, parent=None):
+        super(ErrorWindow, self).__init__(parent)
+        self.setupUi(self)
+        self.btnOK.clicked.connect(self.close_window)
 
-tk.Label(root, text="Emissivity:").grid(row=4, column=0, sticky="w")
-tk.Entry(root, textvariable=emissivity_var).grid(row=4, column=1)
+    def close_window(self):
+        self.close()  
 
-tk.Label(root, text="Temperature Difference (°C):").grid(row=5, column=0, sticky="w")
-tk.Entry(root, textvariable=temp_diff_var).grid(row=5, column=1)
 
-# Time and Date
-time_date_label = ttk.Label(root, text=f"Time and Date: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-time_date_label.grid(row=6, column=0, columnspan=2)
 
-# Button to display inputs
-tk.Button(root, text="Submit", command=display_inputs).grid(row=7, column=0, columnspan=2)
+#################################################################
+########################## MAIN WINDOW ##########################
+#################################################################
 
-root.mainloop()
+Ui_MainWindow, BaseClass = uic.loadUiType("mainWindow.ui")
+
+class MainWindow(QMainWindow, Ui_MainWindow):
+    def __init__(self, parent=None):
+        super(MainWindow, self).__init__(parent)
+        self.setupUi(self)
+        #self.setMinimumSize(870, 550)
+
+        # Declare files / functions
+        self.fluke = fluke.Fluke()
+        self.cyclops = cyclops.Cyclops()
+
+        # Variables
+        self.ports = []
+        self.portsDescription = []
+        self.baudRate = ["4800", "9600", "19200", "38400", "57600", "115200", "230400", "460800", "921600"]
+        self.calibratorStatus = 0
+        self.CameraMode = ["Normal", "Average", "Peak", "Valley"]
+
+        self.errorWindow = ErrorWindow() # Error for connection on calibrator
+
+        # Date, TIme
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.updateTime)
+        self.timer.start(1000)  # 1000 milliseconds (1 second)
+        self.updateTime()
+
+        # GUI
+        self.btnRefresh.clicked.connect(self.list_serial_ports)         # Refresh button 
+        self.cmbBaud.addItems(self.baudRate)                            # BaudRate combo box
+        self.btnExit.clicked.connect(self.appExit)                      # Exit
+        self.cmbCamMode.addItems(self.CameraMode)                       # Measuring modes of camera
+        self.btnAutofocus.clicked.connect(self.cyclops.CyclopsAutofocus)# Triger auto focus of camera
+        self.btnSetMode.clicked.connect(self.setMode)                   # Set measuring mode of camera
+        self.btnSetAlarm.clicked.connect(self.setAlarm)                 # Set alarm for temperature
+        self.cbUpperAlarm.stateChanged.connect(self.grayOutAlarm)       # Grayout alarm settings if not enabled
+        self.cbLowerAlarm.stateChanged.connect(self.grayOutAlarm)       # Grayout alarm settings if not enabled
+        self.btnConnect.clicked.connect(self.calibratorConnect)         # Connect to calibrator
+        self.btnSetEmisivity.clicked.connect(self.setEmisivityCamera)   # Connect to calibrator
+        self.btnExport.clicked.connect(self.exportCSV)                  # Export measurements in CSV file
+
+        # Graph
+        self.plot(
+            [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],  # Hours
+            [30, 32, 34, 32, 33, 31, 29, 32, 35, 45],  # Temperature
+        )
+
+        """
+        test = "S -50C    S"
+        AlUp, AlLow, AlEN = Decode_AR(test)
+        print(AlLow)
+        print(AlUp)
+        print(AlEN)
+        """
+
+    # Plot drawing #
+    def plot(self, hour, temperature):
+        self.graphWidget.plot(hour, temperature)
+
+
+    # Updating time and date #
+    def updateTime(self):
+        current_time = QDateTime.currentDateTime()
+        formatted_time = current_time.toString('HH:mm:ss')
+        formatted_date = current_time.toString('dd.MM.yyyy')
+        self.lblTime.setText(formatted_time)
+        self.lblDate.setText(formatted_date)
+
+
+    # Set camera mode #
+    def setMode(self):
+        selectedMode = self.cmbCamMode.currentText()
+        match selectedMode:
+            case "Normal":
+                self.cyclops.CyclopsNormalModeSet()
+            case "Average":
+                self.cyclops.CyclopsAverageModeSet()
+            case "Peak":
+                self.cyclops.CyclopsPeakModeSet()
+            case "Valley":
+                self.cyclops.CyclopsValleyModeSet()
+            case _:
+                self.cyclops.CyclopsNormalModeSet()
+
+
+    # Grying out widgets #
+    def grayOutAlarm(self):
+        self.dsbUpperAlarm.setEnabled(self.cbUpperAlarm.isChecked())
+        self.dsbLowerAlarm.setEnabled(self.cbLowerAlarm.isChecked())
+
+
+    # Set alarm values #
+    def setAlarm(self):
+        # S - enable, C - desable
+        if self.cbUpperAlarm.isChecked():
+            upperAlarm = "S"
+            upperTemp = round(self.dsbUpperAlarm.value())
+        else:
+            upperAlarm = "C"
+            upperTemp = ""
+
+        if self.cbLowerAlarm.isChecked():
+            lowerAlarm = "S"
+            lowerTemp = round(self.dsbLowerAlarm.value())
+        else:
+            lowerAlarm = "C"
+            lowerTemp = ""
+
+        if self.cbSoundAlarm.isChecked():
+            soundAlarm = "S"
+        else:
+            soundAlarm = "C"
+        
+        self.cyclops.CyclopsAlarmSet(upperAlarm, upperTemp, lowerAlarm, lowerTemp, soundAlarm)
+
+    # Connect fluke calibrator #
+    def calibratorConnect(self):
+        if self.calibratorStatus == 0:
+            selectedBaud = self.cmbBaud.currentText()
+            selectedPort = self.cmbPorts.currentText()
+            
+            if selectedPort == "" or selectedBaud == "":
+                self.errorWindow.show() # ERROR - unselected baud or port
+            else: 
+                index = self.portsDescription.index(selectedPort) # get name of that port ("COM3")
+                report = self.fluke.FlukeOpenSerial(self.ports[index], selectedBaud)
+                if report != True:
+                    self.lblCalibratorStatus.setText("(Disconnected)")
+                    self.errorWindow.show() # ERROR - unselected baud or port
+                else:
+                    self.lblCalibratorStatus.setText("(Connected)")
+                    self.btnConnect.setText("Disconnect")
+                    self.calibratorStatus = 1
+        else:
+            report = self.fluke.FlukeCloseSerial()
+            if report != None:
+                self.lblCalibratorStatus.setText("(Connected)")
+                self.errorWindow.show() # ERROR - cant disconnect
+            else:
+                self.lblCalibratorStatus.setText("(Disconnected)")
+                self.btnConnect.setText("Connect")
+                self.calibratorStatus = 0 # disconnected
+
+    # Set emisivity #
+    def setEmisivityCamera(self):
+        emisivity = self.dsbCameraEmisivity.value()
+        self.cyclops.CyclopsEmissivitySet(emisivity)
+
+
+    # List all available serial ports #
+    def list_serial_ports(self):
+        ports = serial.tools.list_ports.comports()
+        self.portsDescription = []
+        self.ports = []
+        if not ports:
+            #print("No serial ports found!")
+            return None
+
+        for port in ports:
+            #print(f"{port.device} - {port.description}")
+            self.ports.append(port.device)
+            self.portsDescription.append(port.description)
+        
+        self.cmbPorts.clear() # clear all devices in list
+        self.cmbPorts.addItems(self.portsDescription) # add all new devices
+    
+
+    # Save measurements to CSV file
+    def exportCSV(timestamps, values): # lists of times and measurement values
+        DateTime = time.strftime("%Y_%m_%d-%H_%M")
+        with open(str(DateTime) + 'file.csv', 'w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(['Time', 'Temp.'])
+            writer.writerow([timestamps, values])
+
+
+    # Decode returned values #
+    def Decode_AF_AS_ES(self, value):
+        # AF - auto focus, AS&...
+        if value == "OK!":
+            return None
+        if value == "DF?":
+            return -1
+        if value == "MAN":
+            return -1
+        if value == "E34": # AS , ES
+            return -1
+
+    def Decode_AR(self, value):
+        # AR
+        splitValue = list(value)
+        if splitValue[0] == "S":
+            AlUp = int(splitValue[1] + splitValue[2] + splitValue[3] + splitValue[4])
+        elif splitValue[0] == "C":
+            AlUp = "Disable"
+
+        if splitValue[5] == "S":
+            AlLow = int(splitValue[6] + splitValue[7] + splitValue[8] + splitValue[9])
+        elif splitValue[5] == "C":
+            AlLow = "Disable"
+
+        if splitValue[10] == "S":
+            AlEN = "Enable"
+            
+        elif splitValue[10] == "C":
+            AlEN = "Disable"
+        
+        return AlUp, AlLow, AlEN
+    
+
+    # Close application #
+    def appExit(self):
+        sys.exit() # dont call it directly
+    
+
+
+##################################################################
+########################## START WINDOW ##########################
+##################################################################
+
+class StartWindow:
+    def __init__(self):
+        super().__init__()
+
+        # Declare files / functions
+        self.fluke = fluke.Fluke()
+        self.cyclops = cyclops.Cyclops()
+
+        # Variables
+        self.ports = []
+        self.portsDescription = []
+        self.baudRate = ["4800", "9600", "19200", "38400", "57600", "115200", "230400", "460800", "921600"]
+
+        # GUI
+        #self.setMinimumSize(400, 220)
+        Form, Window = uic.loadUiType("startWindow.ui")
+        self.app = QApplication([])       # Create an application object
+        self.window = Window()            # Create a window object from the loaded UI class
+        self.form = Form()                # Create a form object from the loaded UI class
+        self.form.setupUi(self.window)    # Set up the UI from the form onto the window
+
+        self.mainWindow = MainWindow()
+        self.errorWindow = ErrorWindow()
+
+        # Connect the button click to the function [Ensure pushButton matches the object name in Qt Designer]
+        self.form.btnRefresh.clicked.connect(self.list_serial_ports)         # Refresh button 
+        self.form.cmbBaud.addItems(self.baudRate)                            # BaudRate combo box
+        self.form.btnExit.clicked.connect(self.appExit)                      # Exit
+        self.form.btnConnect.clicked.connect(self.OpenMainWindow)            # Connect
+    
+        self.window.show()           # Display the window
+        self.app.exec()              # Start the application's event loop
+
+
+    # Close application #
+    def appExit(self):
+        sys.exit() # dont call it directly
+
+    # Open main window or error #
+    def OpenMainWindow(self):
+        selectedBaud = self.form.cmbBaud.currentText()
+        selectedPort = self.form.cmbPorts.currentText()
+        
+        if selectedPort == "" or selectedBaud == "":
+            self.errorWindow.show() # ERROR - unselected baud or port
+        else: 
+            index = self.portsDescription.index(selectedPort) # get name of that port
+            report = self.cyclops.CyclopsOpenSerial(self.ports[index], selectedBaud)
+            if report == True:
+                self.mainWindow.show() # OK -> main window
+            else:
+                self.errorWindow.show() # ERROR - unselected baud or port
+
+   # List all available serial ports #
+    def list_serial_ports(self):
+        ports = serial.tools.list_ports.comports()
+        self.portsDescription = []
+        self.ports = []
+        if not ports:
+            #print("No serial ports found!")
+            return None
+
+        for port in ports:
+            #print(f"{port.device} - {port.description}")
+            self.ports.append(port.device)
+            self.portsDescription.append(port.description)
+        
+        self.form.cmbPorts.clear() # clear all devices in list
+        self.form.cmbPorts.addItems(self.portsDescription) # add all new devices
+
+
+
+        

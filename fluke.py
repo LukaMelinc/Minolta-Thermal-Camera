@@ -23,11 +23,17 @@ class Fluke:
     def FlukeOpenSerial(self, port, baudrate):
         try:
             self.serialport = serial.Serial(port = port, baudrate = baudrate, bytesize = self.bytesize, parity = self.parity, stopbits=self.stopbits, xonxoff = self.xonxoff, rtscts = self.rtscts, dsrdtr = self.dsrdtr, timeout = 1)
-            print(f"Opened {self.port} at {self.baudrate} baudrate.")
-            return self.serialport
+            #print(f"Opened {self.port} at {self.baudrate} baudrate.")
+            return self.serialport.is_open
         except serial.SerialException as e:
-            print(f"Error opening serial port {self.port}: {e}")
-            return None     
+            #print(f"Error opening serial port {self.port}: {e}")
+            return self.serialport.is_open  
+
+
+    # Close communication with device
+    def FlukeCloseSerial(self):
+        response = self.serialport.close()   
+        return response
 
 
     # Clear the status registers
@@ -42,17 +48,9 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
-
-
-    # Read the main heat output percent
-    def FlukeID(self):
-        data = '*IDN?' + ' \r'
-        self.serialport.write(data.encode('ascii'))
-        time.sleep(0.05)
-        response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
-
+        #print(f"Response: {response}")
+        return response
+        
 
     # Read the main heat output percent
     def FlukeOutpData(self):
@@ -69,7 +67,8 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
         
 
     # Set the Main Heat output enable
@@ -86,7 +85,8 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
 
 
     # Set the program name by identifier
@@ -103,7 +103,8 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
         
 
     # Set the program advance option
@@ -119,7 +120,8 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
         
 
     # Set the program cycles
@@ -135,7 +137,8 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
         
 
     # Read or set the program settle option
@@ -151,7 +154,8 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
         
 
     # Read or set the program soak time
@@ -174,7 +178,8 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
         
 
     # Set a program parameter, for a given program identified
@@ -196,7 +201,8 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
 
 
     # Advance to the next program step if waiting for user input
@@ -212,7 +218,8 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
 
     
     # Read the program selection
@@ -221,7 +228,8 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
 
     
     # Set the program selection
@@ -237,7 +245,8 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
 
     
     # Read or set the program execution state for the selected program
@@ -253,7 +262,8 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
 
 
     # Set the instrument calibration date in yyyy,mm,dd format
@@ -282,7 +292,8 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
 
     
     # Read a control temperature parameter
@@ -301,7 +312,8 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
 
 
     # Read the calibration IR wavelength option
@@ -310,7 +322,8 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
 
 
     # Set the calibration IR wavelength option
@@ -326,7 +339,8 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
 
 
     # Set the IR emissivity setting
@@ -342,10 +356,11 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
 
 
-    # Read or set the main control loop derivative time in seconds
+    # Set the main control loop derivative time in seconds
     # - val: Min: 0.0, Max: 99.9
     # !!! Protected with password !!!
     def FlukeSourLconDerSet(self, val):
@@ -359,10 +374,11 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
 
 
-    # Read or set the main control loop derivative time in seconds
+    # Set the main control loop derivative time in seconds
     # - val: Range = {10.0-999.9}
     # !!! Protected with password !!!
     def FlukeSourLconIntSet(self, val):
@@ -376,7 +392,8 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
 
 
     # Set the main control loop proportional band in °C
@@ -393,7 +410,8 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
 
 
     # Set a main temperature preset set-point
@@ -414,7 +432,8 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
 
 
     # Read the soft cutout set-point
@@ -423,7 +442,8 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
 
     
     # Set the soft cutout set-point 
@@ -440,7 +460,8 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
 
     
     # Read the control temperature rate of change (Scan Rate), °C or °F per minute.
@@ -449,7 +470,8 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
 
     
     # Set the control temperature rate of change (Scan Rate), °C or °F per minute.
@@ -465,7 +487,8 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
 
     
     # Reads the apparent temperature, in °C or °F
@@ -474,7 +497,8 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
 
 
     # Reads the control set-point, °C or °F 
@@ -483,7 +507,8 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
 
     
     # Set the control set-point, °C or °F 
@@ -499,7 +524,8 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
 
     
     # Set the stability alert (beep) 
@@ -515,7 +541,8 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
 
     
     # Read the control temperature stability limit, °C or °F 
@@ -524,7 +551,8 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
 
     
     # Read or set the control temperature stability limit
@@ -540,7 +568,8 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
 
     
     # Beep the system beeper
@@ -555,7 +584,8 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
 
     
     # Set the keyboard beep function
@@ -571,7 +601,8 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
 
     
     # Read serial interface baud rate
@@ -580,7 +611,8 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
 
     
     # Set serial interface baud rate 
@@ -596,7 +628,8 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
 
     
     # Set serial interface linefeed enable
@@ -612,7 +645,8 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
 
     
     # Set the decimal format
@@ -628,7 +662,8 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
 
     
     # Read the keypad lockout
@@ -637,7 +672,8 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
 
     
     # Set the keypad lockout
@@ -654,7 +690,8 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
 
     
     # Set the display language
@@ -670,7 +707,8 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
 
     
     # Disable access to password protected setting commands
@@ -692,7 +730,8 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
 
     
     # Set the password
@@ -709,7 +748,8 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
 
     
     # Set password protection level
@@ -725,7 +765,8 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
+        return response
 
     
     # Set the display temperature units

@@ -1,0 +1,86 @@
+Funkcije AVMS:
+### Minolta ###
+- Uporabno:
+CyclopsOpenSerial - povezava
+CyclopsAutofocus - fokus kamere(more bit v modu za fokus)
+CyclopsGetTemp - preberi temp.
+
+CyclopsEmissivitySet - nastaviš emisivnost glede na telo ki ga meriš - offset
+CyclopsStatusRead - ti javi parametre kamere (nevem če dela prau al samo ne razumem)
+
+CyclopsAverageModeSet - povprečje 10 meritev od držanja tipke
+CyclopsNormalModeSet - meri kar vidi
+CyclopsPeakModeSet - max value kolkor časa držiš tipko
+CyclopsValleyModeSet - min value kolkor časa držiš tipko
+
+
+- Manj uporabno:
+CyclopsAlarmRead - preberi vrednosti alarmov
+CyclopsAlarmSet - nastavi vrednosti alarmov
+CyclopsMonitorModeSet - je enako kot da bi na kameri držal tipko za merjenje (rabiš za nekatere mode: valej, avg, peak)
+CyclopsCancleModeSet - enako kot da bi spustil tipko za merjenje (prekine nekatere meritve)
+
+### Fluke ###
+- Uporabno:
+FlukeOpenSerial - povezava
+FlukeRegisterReset - brisanje status registra
+FlukeOutpStatRead, FlukeOutpStatSet - preberi ali nastavi grelec (on/off)
+FlukeSourCalEmisRead - vrne emisivnost (kalibracije?)
+FlukeSourEmisRead - vrne emisivnost
+FlukeSourEmisSet - nastavi emisivnost
+FlukeSourListSpoRead - vrne main temperaturo
+FlukeSourListSpoSet - nastavi main temperaturo
+FlukeSourSensBlocRead - prebere temperaturo 
+FlukeSourSensDataRead - tudi prebere temperaturo?
+FlukeSourSpoRead, FlukeSourSpoSet - nastavi ali prebere temperaturo (omejena na model s tabelo str. 60)
+FlukeSystBeepImm - prožiš alarm (test povezave)
+
+
+- Manj uporabno:
+FlukeID - podatki o napravi
+FlukeOutpData - podatki o delovanju grelca %
+FlukeProgNameRead, FlukeProgNameSet - vrne ali nastavi ime programa glede na ID
+FlukeProgOptAdvRead, FlukeProgOptAdvSet - nastaviš neko delovanje programa
+FlukeProgOptCyclRead, FlukeProgOptCyclSet - prebere ali nastavi cikle programa (verjetno kolko krat se izvede)
+FlukeProgOptSettRead, FlukeProgOptSettSet - kje se program ustali?
+FlukeProgOptSoakRead, FlukeProgOptSoakSet - čas "predgretja"
+FlukeProgParParRead, FlukeProgParParSet - parametri programa (ID programa in posamezen parameter)
+FlukeProgParCatRead - vrne vse parametre programa
+FlukeProgPromAdvSet - nadaljuje na naslednji korak programa
+FlukeProgPromStatRead - vrne kako bo program 
+FlukeProgSelRead, FlukeProgSelSet - pove kateri program je izbran ali ga izbereš
+FlukeProgStatRead, FlukeProgStatSet - prebere ali nastaviš izvajanje programa
+FlukeSourProtCleaReset - zbriše blokado temperature če je prožena Hard
+FlukeSourProtHcutRead - prebere blokado temperature Hard
+FlukeSourProtScutLevRead - prebere blokado temperature Soft
+FlukeSourStabBeepRead, FlukeSourStabBeepSet - prebere ali nastavi alarm (on/off)
+FlukeSystBeepKeybRead, FlukeSystBeepKeybSet - nastavi zvok tipkovnice
+FlukeSystDecFormRead, FlukeSystDecFormSet - nastaviš a je decimalka z vejco ali piko
+
+
+- Neuporabno:
+FlukeSourCalDateRead - datum kalibracije
+FlukeSourCalDateSet - nastavi datum kalibracije
+FlukeSourCalParxRead - ????????
+FlukeSourCalParxSet - ?????????
+FlukeSourCalParxTempRead - ????
+FlukeSourCalWavRead - valovna dolžina kalibracije
+FlukeSourCalWavSet - nastaviš valovno dolžino kalibracije
+FlukeSourLconDerRead - PID 
+FlukeSourLconDerSet - PID
+FlukeSourLconIntRead - PID
+FlukeSourLconIntSet - PID
+FlukeSourLconPbanRead - PID
+FlukeSourLconPbanSet - PID
+FlukeSourProtTripRead - nastavitev blokade temperature
+FlukeSourRateRead - omejitev deg / sec 
+FlukeSourRateSet - nastavi omejitev deg / sec
+FlukeSourStabDatRead - stabilnost temperature (kontroler)
+FlukeSourStabLimRead, FlukeSourStabLimSet - meja stabilnosti (podaš velikost okna nihanja temperature)
+FlukeSourStabTestRead - vrne rezultate testa stabilnostis
+FlukeSystCodVersRead - verzija kode na mašini
+FlukeSystCommSerBaudRead - baud rate porta
+FlukeSystBeepKeybSet - nastavi baud rate
+FlukeSystCommSerLinRead - prebereš kak je linefeed
+FlukeSystCommSerLinSet - nastaviš line feed
+

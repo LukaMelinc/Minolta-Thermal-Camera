@@ -1,19 +1,17 @@
-import serial
-import serial.tools.list_ports
 import time
+import threading
+
 import fluke
 import cyclops
 import GUI
-import tkinter as tk
 
-# List all available serial ports
-def list_serial_ports():
-    ports = serial.tools.list_ports.comports()
-    print("Available Serial Ports:")
-    for port in ports:
-        print(f"{port.device} - {port.description}")
-    if not ports:
-        print("No serial ports found!")
+# Thread function to parallel measure values
+def RepeatFunction(interval, function, *args, **kwargs):
+    threading.Timer(interval, RepeatFunction, [interval, function] + list(args), kwargs).start()
+    function(*args, **kwargs)
+
+def Measure():
+    print("Function is called")
 
 
 if __name__ == "__main__":
@@ -21,16 +19,13 @@ if __name__ == "__main__":
     # Declare classes #
     fluke = fluke.Fluke()
     cyclops = cyclops.Cyclops()
-    root = tk.Tk()
-    gui = GUI.GUI(root)
+    gui = GUI.StartWindow()
+    
+    #cyclops.CyclopsStatusRead()
 
-    root.mainloop()
-
-    # Open serial communication with devices #
-    fluke.FlukeOpenSerial("COM5", 9600)
-    cyclops.CyclopsOpenSerial("COM3", 4800)
+    # Call my_function every n seconds
+    #RepeatFunction(1, Measure)
 
 
-
-
-    cyclops.CyclopsGetTemp()
+        
+    
