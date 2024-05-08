@@ -40,6 +40,21 @@ class ErrorWindow(QMainWindow, Ui_ErrorWindow):
         self.close()  
 
 
+##################################################################
+########################## FOCUS WINDOW ##########################
+##################################################################
+
+Ui_FocusWindow, BaseClass = uic.loadUiType("focusWindow.ui")
+
+class FocusWindow(QMainWindow, Ui_FocusWindow):
+    def __init__(self, parent=None):
+        super(FocusWindow, self).__init__(parent)
+        self.setupUi(self)
+        self.btnOK.clicked.connect(self.close_window)
+
+    def close_window(self):
+        self.close()
+
 
 #################################################################
 ########################## MAIN WINDOW ##########################
@@ -65,6 +80,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.CameraMode = ["Normal", "Average", "Peak", "Valley"]
 
         self.errorWindow = ErrorWindow() # Error for connection on calibrator
+        self.focusWindow = FocusWindow() # Report window after focusing
 
         # Date, TIme
         self.timer = QTimer(self)
@@ -77,7 +93,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.cmbBaud.addItems(self.baudRate)                            # BaudRate combo box
         self.btnExit.clicked.connect(self.appExit)                      # Exit
         self.cmbCamMode.addItems(self.CameraMode)                       # Measuring modes of camera
-        self.btnAutofocus.clicked.connect(self.cyclops.CyclopsAutofocus)# Triger auto focus of camera
+        self.btnAutofocus.clicked.connect(self.focus)                   # Triger auto focus of camera
         self.btnSetMode.clicked.connect(self.setMode)                   # Set measuring mode of camera
         self.btnSetAlarm.clicked.connect(self.setAlarm)                 # Set alarm for temperature
         self.cbUpperAlarm.stateChanged.connect(self.grayOutAlarm)       # Grayout alarm settings if not enabled
@@ -85,6 +101,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btnConnect.clicked.connect(self.calibratorConnect)         # Connect to calibrator
         self.btnSetEmisivity.clicked.connect(self.setEmisivityCamera)   # Connect to calibrator
         self.btnExport.clicked.connect(self.exportCSV)                  # Export measurements in CSV file
+        self.btnAlarmRead.clicked.connect(self.alarmRead)               # Export measurements in CSV file
 
         # Graph
         self.plot(
@@ -172,26 +189,68 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 index = self.portsDescription.index(selectedPort) # get name of that port ("COM3")
                 report = self.fluke.FlukeOpenSerial(self.ports[index], selectedBaud)
                 if report != True:
-                    self.lblCalibratorStatus.setText("(Disconnected)")
+                    self.lblCalibratorStatus.setText("Disconnected")
                     self.errorWindow.show() # ERROR - unselected baud or port
                 else:
-                    self.lblCalibratorStatus.setText("(Connected)")
+                    self.lblCalibratorStatus.setText("Connected")
                     self.btnConnect.setText("Disconnect")
                     self.calibratorStatus = 1
         else:
             report = self.fluke.FlukeCloseSerial()
             if report != None:
-                self.lblCalibratorStatus.setText("(Connected)")
+                self.lblCalibratorStatus.setText("Connected")
                 self.errorWindow.show() # ERROR - cant disconnect
             else:
-                self.lblCalibratorStatus.setText("(Disconnected)")
+                self.lblCalibratorStatus.setText("Disconnected")
                 self.btnConnect.setText("Connect")
                 self.calibratorStatus = 0 # disconnected
+
 
     # Set emisivity #
     def setEmisivityCamera(self):
         emisivity = self.dsbCameraEmisivity.value()
         self.cyclops.CyclopsEmissivitySet(emisivity)
+
+    
+    # Read alarm setting from camera and set them in program #
+    def alarmRead(self):
+        response = self.cyclops.CyclopsAlarmRead()
+        splitValue = list(response)
+        # Alarm high
+        if splitValue[0] == "S": # ON
+            self.dsbUpperAlarm.setEnabled(1)
+            self.cbUpperAlarm.setCheckState(True)
+            AlUp = int(splitValue[1] + splitValue[2] + splitValue[3] + splitValue[4])
+            self.dsbUpperAlarm.setValue(AlUp)
+        elif splitValue[0] == "C": # OFF
+            self.dsbUpperAlarm.setEnabled(0)
+            self.cbUpperAlarm.setCheckState(False)
+        # Alarm low
+        if splitValue[5] == "S": # ON
+            self.dsbLowerAlarm.setEnabled(1)
+            self.cbLowerAlarm.setCheckState(True)
+            AlLow = int(splitValue[6] + splitValue[7] + splitValue[8] + splitValue[9])
+            self.cbLowerAlarm.setValue(AlLow)
+        elif splitValue[5] == "C": # OFF
+            self.dsbLowerAlarm.setEnabled(0)
+            self.cbLowerAlarm.setCheckState(False)
+        # Alarm sound
+        if splitValue[10] == "S": # ON
+            self.cbSoundAlarm.setCheckState(True)
+        elif splitValue[10] == "C": # OFF
+            self.cbSoundAlarm.setCheckState(False)
+
+
+    # Focus and response #
+    def focus(self):
+        response = self.cyclops.CyclopsAutofocus
+        self.focusWindow.show()
+        if response == "OK!":
+            self.txtFocusStatus.setText("Focus achived!")
+        if response == "DF?":
+            self.txtFocusStatus.setText("Can't focus!")
+        if response == "MAN":
+            self.txtFocusStatus.setText("Focus set to manual!")
 
 
     # List all available serial ports #
@@ -218,42 +277,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         with open(str(DateTime) + 'file.csv', 'w', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(['Time', 'Temp.'])
-            writer.writerow([timestamps, values])
-
-
-    # Decode returned values #
-    def Decode_AF_AS_ES(self, value):
-        # AF - auto focus, AS&...
-        if value == "OK!":
-            return None
-        if value == "DF?":
-            return -1
-        if value == "MAN":
-            return -1
-        if value == "E34": # AS , ES
-            return -1
-
-    def Decode_AR(self, value):
-        # AR
-        splitValue = list(value)
-        if splitValue[0] == "S":
-            AlUp = int(splitValue[1] + splitValue[2] + splitValue[3] + splitValue[4])
-        elif splitValue[0] == "C":
-            AlUp = "Disable"
-
-        if splitValue[5] == "S":
-            AlLow = int(splitValue[6] + splitValue[7] + splitValue[8] + splitValue[9])
-        elif splitValue[5] == "C":
-            AlLow = "Disable"
-
-        if splitValue[10] == "S":
-            AlEN = "Enable"
-            
-        elif splitValue[10] == "C":
-            AlEN = "Disable"
-        
-        return AlUp, AlLow, AlEN
-    
+            writer.writerow([timestamps, values])  
 
     # Close application #
     def appExit(self):
