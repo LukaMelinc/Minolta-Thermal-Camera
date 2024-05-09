@@ -328,6 +328,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def sampleMeas(self):
         if self.sample == 0:
             self.sample = 1
+            self.cyclops.CyclopsNormalModeSet()
+            self.lblMode.setText("Normal")
+            index = self.CameraMode.index("Normal")
+            self.cmbCamMode.setCurrentIndex(index)
+            self.focus()
              # Call my_function every n seconds
             sampleTime = self.dsbSampleTime.value()
             self.RepeatFunctionSample(sampleTime, self.MeasureSample)
