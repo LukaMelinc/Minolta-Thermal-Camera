@@ -17,14 +17,14 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>Focus report</string>
+   <string>Error</string>
   </property>
   <widget class="QPushButton" name="btnOK">
    <property name="geometry">
     <rect>
      <x>60</x>
      <y>60</y>
-     <width>101</width>
+     <width>93</width>
      <height>28</height>
     </rect>
    </property>
@@ -36,8 +36,8 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>10</y>
-     <width>191</width>
+     <y>20</y>
+     <width>201</width>
      <height>21</height>
     </rect>
    </property>
@@ -50,31 +50,7 @@
     <number>1</number>
    </property>
    <property name="text">
-    <string>Focus report:</string>
-   </property>
-   <property name="alignment">
-    <set>Qt::AlignCenter</set>
-   </property>
-  </widget>
-  <widget class="QLabel" name="txtFocus">
-   <property name="geometry">
-    <rect>
-     <x>30</x>
-     <y>30</y>
-     <width>161</width>
-     <height>20</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>10</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>None</string>
-   </property>
-   <property name="alignment">
-    <set>Qt::AlignCenter</set>
+    <string>Device communication error:</string>
    </property>
   </widget>
  </widget>

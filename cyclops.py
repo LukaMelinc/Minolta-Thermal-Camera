@@ -41,6 +41,12 @@ class Cyclops:
     def CyclopsCloseSerial(self):
         response = self.serialport.close()
         return response
+    
+
+    # Read communication output
+    def CyclopsReadSerial(self):
+        response = self.serialport.readline().decode().strip()
+        return response
         
 
     # Causes autofocus to be performed once
@@ -59,9 +65,9 @@ class Cyclops:
     def CyclopsAlarmRead(self):
         data = 'AR' + '\r'
         self.serialport.write(data.encode('ascii'))
-        time.sleep(0.05)
+        time.sleep(0.5)
         response = self.serialport.readline().decode().strip()
-        #print(f"Response: {response}")
+        print(f"Response: {response}")
         return response
 
 
@@ -75,29 +81,28 @@ class Cyclops:
         if ON_OFF_AlHigh == "C":
             AlHighSpaces = "    "       # 4x space
         else:
-            if Val_AlHigh >= 0 and Val_AlHigh < 10: 
-                AlHighSpaces = "   "    # 3x space
-            if Val_AlHigh > -10 and Val_AlHigh < 100: 
-                AlHighSpaces = "  "     # 2x space
-            if Val_AlHigh > -100 and Val_AlHigh < 1000: 
-                AlHighSpaces = " "      # 1x space
             if Val_AlHigh > -1000 and Val_AlHigh < 10000: 
                 AlHighSpaces = ""       # 0x space
+            if Val_AlHigh > -100 and Val_AlHigh < 1000: 
+                AlHighSpaces = " "      # 1x space
+            if Val_AlHigh > -10 and Val_AlHigh < 100: 
+                AlHighSpaces = "  "     # 2x space
+            if Val_AlHigh >= 0 and Val_AlHigh < 10: 
+                AlHighSpaces = "   "    # 3x space
 
         if ON_OFF_AlLow == "C":
             AlLowSpaces = "    "        # 4x space
         else:
-            if Val_AlLow >= 0 and Val_AlLow < 10: 
-                AlLowSpaces = "   "     # 3x space
-            if Val_AlLow > -10 and Val_AlLow < 100: 
-                AlLowSpaces = "  "      # 2x space
-            if Val_AlLow > -100 and Val_AlLow < 1000: 
-                AlLowSpaces = " "       # 1x space
             if Val_AlLow > -1000 and Val_AlLow < 10000: 
                 AlLowSpaces = ""        # 0x space
+            if Val_AlLow > -100 and Val_AlLow < 1000: 
+                AlLowSpaces = " "       # 1x space
+            if Val_AlLow > -10 and Val_AlLow < 100: 
+                AlLowSpaces = "  "      # 2x space
+            if Val_AlLow >= 0 and Val_AlLow < 10: 
+                AlLowSpaces = "   "     # 3x space            
 
         data = 'AS&' + str(ON_OFF_AlHigh) + AlHighSpaces + str(Val_AlHigh) + str(ON_OFF_AlLow) + AlLowSpaces + str(Val_AlLow) + str(AlEN) + '\r'
-        print(data)
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
@@ -108,7 +113,6 @@ class Cyclops:
     # Causes measureing display mode to be changed to AVERAGE. These data is output when camera enters display hold
     # Response: Measurement data
     def CyclopsAverageModeSet(self):
-        print(self.serialport)
         data = 'AVRG' + '\r'
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
@@ -143,7 +147,7 @@ class Cyclops:
     # Sets emissivity to the value sets with argument
     # Response: Response: OK! - values are acceptable, E34 - values are unaccaptabel
     def CyclopsEmissivitySet(self, emiss):
-        data = 'ES&' + str(emiss) + '\r'
+        data = 'ES&' + str(round(emiss,2)) + '\r'
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()

@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pyqtgraph as pg
 import time
+import threading
 import csv
 
 import fluke
@@ -23,6 +24,24 @@ import cyclops
      # Error: "isModal" or "setSizeGripEnabled" -> delete "modal" or "setSizeGrip" in .ui files
 
 """
+fluke = fluke.Fluke()
+cyclops = cyclops.Cyclops()
+
+################################################################
+########################## E34 WINDOW ##########################
+################################################################
+
+Ui_E34Window, BaseClass = uic.loadUiType("E34Window.ui")
+
+class E34Window(QMainWindow, Ui_E34Window):
+    def __init__(self, parent=None):
+        super(E34Window, self).__init__(parent)
+        self.setupUi(self)
+        self.btnOK.clicked.connect(self.close_window)
+
+    def close_window(self):
+        self.close()  
+
 
 ##################################################################
 ########################## ERROR WINDOW ##########################
@@ -69,18 +88,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         #self.setMinimumSize(870, 550)
 
         # Declare files / functions
-        self.fluke = fluke.Fluke()
-        self.cyclops = cyclops.Cyclops()
+        self.fluke = fluke
+        self.cyclops = cyclops
+        self.timerRecord = threading.Timer
+        self.timerSample = threading.Timer
 
         # Variables
         self.ports = []
         self.portsDescription = []
         self.baudRate = ["4800", "9600", "19200", "38400", "57600", "115200", "230400", "460800", "921600"]
         self.calibratorStatus = 0
+        self.recording = 0
+        self.sample = 0
         self.CameraMode = ["Normal", "Average", "Peak", "Valley"]
 
         self.errorWindow = ErrorWindow() # Error for connection on calibrator
         self.focusWindow = FocusWindow() # Report window after focusing
+        self.E34Window = E34Window()
 
         # Date, TIme
         self.timer = QTimer(self)
@@ -101,7 +125,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btnConnect.clicked.connect(self.calibratorConnect)         # Connect to calibrator
         self.btnSetEmisivity.clicked.connect(self.setEmisivityCamera)   # Connect to calibrator
         self.btnExport.clicked.connect(self.exportCSV)                  # Export measurements in CSV file
-        self.btnAlarmRead.clicked.connect(self.alarmRead)               # Export measurements in CSV file
+        self.btnAlarmRead.clicked.connect(self.alarmRead)               # Read alarm values
+        self.btnRecord.clicked.connect(self.recordMeas)                 # Record measurements
+        self.btnStartSample.clicked.connect(self.sampleMeas)            # Read sample data
 
         # Graph
         self.plot(
@@ -109,13 +135,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             [30, 32, 34, 32, 33, 31, 29, 32, 35, 45],  # Temperature
         )
 
-        """
-        test = "S -50C    S"
-        AlUp, AlLow, AlEN = Decode_AR(test)
-        print(AlLow)
-        print(AlUp)
-        print(AlEN)
-        """
 
     # Plot drawing #
     def plot(self, hour, temperature):
@@ -136,15 +155,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         selectedMode = self.cmbCamMode.currentText()
         match selectedMode:
             case "Normal":
-                self.cyclops.CyclopsNormalModeSet()
+                response = self.cyclops.CyclopsNormalModeSet()
             case "Average":
-                self.cyclops.CyclopsAverageModeSet()
+                response = self.cyclops.CyclopsAverageModeSet()
             case "Peak":
-                self.cyclops.CyclopsPeakModeSet()
+                response = self.cyclops.CyclopsPeakModeSet()
             case "Valley":
-                self.cyclops.CyclopsValleyModeSet()
+                response = self.cyclops.CyclopsValleyModeSet()
             case _:
-                self.cyclops.CyclopsNormalModeSet()
+                response = self.cyclops.CyclopsNormalModeSet()
+        
+        self.lblMode.setText(selectedMode)
 
 
     # Grying out widgets #
@@ -215,43 +236,109 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     # Read alarm setting from camera and set them in program #
     def alarmRead(self):
         response = self.cyclops.CyclopsAlarmRead()
+        if response == "E34" or response == "":
+            self.E34Window.show() # ERROR
+
         splitValue = list(response)
         # Alarm high
         if splitValue[0] == "S": # ON
             self.dsbUpperAlarm.setEnabled(1)
-            self.cbUpperAlarm.setCheckState(True)
+            self.cbUpperAlarm.setChecked(True)
             AlUp = int(splitValue[1] + splitValue[2] + splitValue[3] + splitValue[4])
             self.dsbUpperAlarm.setValue(AlUp)
         elif splitValue[0] == "C": # OFF
             self.dsbUpperAlarm.setEnabled(0)
-            self.cbUpperAlarm.setCheckState(False)
+            self.cbUpperAlarm.setChecked(False)
         # Alarm low
         if splitValue[5] == "S": # ON
             self.dsbLowerAlarm.setEnabled(1)
-            self.cbLowerAlarm.setCheckState(True)
+            self.cbLowerAlarm.setChecked(True)
             AlLow = int(splitValue[6] + splitValue[7] + splitValue[8] + splitValue[9])
-            self.cbLowerAlarm.setValue(AlLow)
+            self.dsbLowerAlarm.setValue(AlLow)
         elif splitValue[5] == "C": # OFF
             self.dsbLowerAlarm.setEnabled(0)
-            self.cbLowerAlarm.setCheckState(False)
+            self.cbLowerAlarm.setChecked(False)
         # Alarm sound
         if splitValue[10] == "S": # ON
-            self.cbSoundAlarm.setCheckState(True)
+            self.cbSoundAlarm.setChecked(True)
         elif splitValue[10] == "C": # OFF
-            self.cbSoundAlarm.setCheckState(False)
+            self.cbSoundAlarm.setChecked(False)
 
 
     # Focus and response #
     def focus(self):
-        response = self.cyclops.CyclopsAutofocus
-        self.focusWindow.show()
+        response = self.cyclops.CyclopsAutofocus()
         if response == "OK!":
-            self.txtFocusStatus.setText("Focus achived!")
+            self.focusWindow.show()
+            self.focusWindow.txtFocus.setText("Focus achived!")
         if response == "DF?":
-            self.txtFocusStatus.setText("Can't focus!")
+            self.focusWindow.show()
+            self.focusWindow.txtFocus.setText("Can't focus!")
         if response == "MAN":
-            self.txtFocusStatus.setText("Focus set to manual!")
+            self.focusWindow.show()
+            self.focusWindow.txtFocus.setText("Focus set to manual!")
 
+
+    # Thread function to parallel measure values
+    def RepeatFunction(self, interval, function, *args, **kwargs):
+        self.timerRecord = threading.Timer(interval, self.RepeatFunction, [interval, function] + list(args), kwargs)
+        self.timerRecord.start()
+        function(*args, **kwargs)
+
+    def Measure(self):
+        # LPH 31.1
+        val = self.cyclops.CyclopsReadSerial()
+        val = val[3:]
+        print(val)
+        self.lcdTemperature.display(val)
+
+    
+    # Thread function to parallel measure values
+    def RepeatFunctionSample(self, interval, function, *args, **kwargs):
+        self.timerSample = threading.Timer(interval, self.RepeatFunctionSample, [interval, function] + list(args), kwargs)
+        self.timerSample.start()
+        function(*args, **kwargs)
+
+    def MeasureSample(self):
+        # LPH 31.1
+        val = self.cyclops.CyclopsGetTemp()
+        val = val[3:]
+        print(val)
+        
+
+
+    # Read temperature in monitor mode
+    def recordMeas(self):
+        if self.recording == 0:
+            self.btnRecord.setText("Stop")
+            self.cyclops.CyclopsMonitorModeSet()
+            self.recording = 1
+             # Call my_function every n seconds
+            self.RepeatFunction(0.25, self.Measure)
+            return None
+        if self.recording == 1:
+            self.btnRecord.setText("Start")
+            self.cyclops.CyclopsCancleModeSet()
+            self.recording = 0
+            self.timerRecord.cancel()  # Stop the timer
+            return None
+        
+
+    # Read temperature in sample mode
+    def sampleMeas(self):
+        if self.sample == 0:
+            self.sample = 1
+             # Call my_function every n seconds
+            sampleTime = self.dsbSampleTime.value()
+            self.RepeatFunctionSample(sampleTime, self.MeasureSample)
+            self.btnStartSample.setText("Stop")
+            return None
+        if self.sample == 1:
+            self.sample = 0
+            self.timerSample.cancel()  # Stop the timer
+            self.btnStartSample.setText("Start")
+            return None
+            
 
     # List all available serial ports #
     def list_serial_ports(self):
@@ -295,8 +382,8 @@ class StartWindow:
         super().__init__()
 
         # Declare files / functions
-        self.fluke = fluke.Fluke()
-        self.cyclops = cyclops.Cyclops()
+        self.fluke = fluke
+        self.cyclops = cyclops
 
         # Variables
         self.ports = []
@@ -359,6 +446,7 @@ class StartWindow:
         
         self.form.cmbPorts.clear() # clear all devices in list
         self.form.cmbPorts.addItems(self.portsDescription) # add all new devices
+
 
 
 
