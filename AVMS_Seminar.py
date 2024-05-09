@@ -1,6 +1,5 @@
 import time
 import threading
-
 import fluke
 import cyclops
 import GUI
@@ -20,8 +19,6 @@ if __name__ == "__main__":
     fluke = fluke.Fluke()
     cyclops = cyclops.Cyclops()
     gui = GUI.StartWindow()
-    
-    #cyclops.CyclopsStatusRead()
 
     # Call my_function every n seconds
     #RepeatFunction(1, Measure)

@@ -13,7 +13,6 @@ CyclopsNormalModeSet - meri kar vidi
 CyclopsPeakModeSet - max value kolkor časa držiš tipko
 CyclopsValleyModeSet - min value kolkor časa držiš tipko
 
-
 - Manj uporabno:
 CyclopsAlarmRead - preberi vrednosti alarmov
 CyclopsAlarmSet - nastavi vrednosti alarmov
@@ -56,6 +55,8 @@ FlukeSourProtScutLevRead - prebere blokado temperature Soft
 FlukeSourStabBeepRead, FlukeSourStabBeepSet - prebere ali nastavi alarm (on/off)
 FlukeSystBeepKeybRead, FlukeSystBeepKeybSet - nastavi zvok tipkovnice
 FlukeSystDecFormRead, FlukeSystDecFormSet - nastaviš a je decimalka z vejco ali piko
+FlukeSystErrRead - preberi zadnji error
+FlukeUnitTempRead, FlukeUnitTempSet - prebere ali nastavi enote (C ali F)
 
 
 - Neuporabno:
@@ -83,4 +84,13 @@ FlukeSystCommSerBaudRead - baud rate porta
 FlukeSystBeepKeybSet - nastavi baud rate
 FlukeSystCommSerLinRead - prebereš kak je linefeed
 FlukeSystCommSerLinSet - nastaviš line feed
+FlukeSystKlockRead, FlukeSystKlockSet - prebere ali nastavi zaklepanje tipkovnice 
+FlukeSystLangRead, FlukeSystLangSet - preveri in nastavi jezik
+FlukeSystLangCatRead - listaj vse jezike ki jih podpira
+FlukeSystPassCdisSet - onemogoči dostop do zaklenjenih funkcij
+FlukeSystPassCenSet - vneseš geslo za te zaklenjene funkcije
+FlukeSystPassCenStatRead - vrne stanje dostopa do zaklenjenih funkcij
+FlukeSystPassNewSet - nastaviš geslo za zaklepanje funkcij
+FlukeSystPassProtRead, FlukeSystPassProtSet - nastavi stopnjo gesla ??
+
 

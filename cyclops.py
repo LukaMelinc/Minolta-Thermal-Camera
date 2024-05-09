@@ -8,8 +8,8 @@ class Cyclops:
     def __init__(self):
         # Defines
         self.serialport = serial.Serial()
-        self.port = "COM3"
-        self.baudrate = 4800
+        self.port = ""
+        self.baudrate = 0
         self.bytesize = serial.SEVENBITS
         self.parity = serial.PARITY_EVEN
         self.stopbits = serial.STOPBITS_TWO
@@ -29,11 +29,11 @@ class Cyclops:
     def CyclopsOpenSerial(self, port, baudrate):
         try:
             self.serialport = serial.Serial(port = port, baudrate = baudrate, bytesize = self.bytesize, parity = self.parity, stopbits = self.stopbits, xonxoff = self.xonxoff, rtscts = self.rtscts, dsrdtr = self.dsrdtr, timeout = 1)
-            #print(f"Opened {self.port} at {self.baudrate} baudrate.")
+            #print(f"Opened {self.port} at {baudrate} baudrate.")
             #print(self.serialport.is_open)
             return self.serialport.is_open
         except serial.SerialException as e:
-            ##print(f"Error opening serial port {self.port}: {e}")
+            #print(f"Error opening serial port {self.port}: {e}")
             return self.serialport.is_open   
         
 
@@ -108,6 +108,7 @@ class Cyclops:
     # Causes measureing display mode to be changed to AVERAGE. These data is output when camera enters display hold
     # Response: Measurement data
     def CyclopsAverageModeSet(self):
+        print(self.serialport)
         data = 'AVRG' + '\r'
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)

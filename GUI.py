@@ -273,11 +273,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     # Save measurements to CSV file
     def exportCSV(timestamps, values): # lists of times and measurement values
-        DateTime = time.strftime("%Y_%m_%d-%H_%M")
+        DateTime = time.strftime("%Y_%m_%d-%H_%M-meritve")
         with open(str(DateTime) + 'file.csv', 'w', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(['Time', 'Temp.'])
             writer.writerow([timestamps, values])  
+
 
     # Close application #
     def appExit(self):
@@ -336,7 +337,7 @@ class StartWindow:
             self.errorWindow.show() # ERROR - unselected baud or port
         else: 
             index = self.portsDescription.index(selectedPort) # get name of that port
-            report = self.cyclops.CyclopsOpenSerial(self.ports[index], selectedBaud)
+            report = self.cyclops.CyclopsOpenSerial(self.ports[index], int(selectedBaud))
             if report == True:
                 self.mainWindow.show() # OK -> main window
             else:

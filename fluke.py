@@ -8,8 +8,8 @@ class Fluke:
     def __init__(self):
         # Defines
         self.serialport = serial.Serial()
-        self.port = "COM5"
-        self.baudrate = 9600
+        self.port = ""
+        self.baudrate = 0
         self.bytesize = serial.EIGHTBITS
         self.parity = serial.PARITY_NONE
         self.stopbits = serial.STOPBITS_ONE
