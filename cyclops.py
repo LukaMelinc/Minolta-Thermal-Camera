@@ -9,7 +9,7 @@ class Cyclops:
         # Defines
         self.serialport = serial.Serial()
         self.port = ""
-        self.baudrate = 0
+        self.baudrate = 4800
         self.bytesize = serial.SEVENBITS
         self.parity = serial.PARITY_EVEN
         self.stopbits = serial.STOPBITS_TWO

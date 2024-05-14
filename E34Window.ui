@@ -50,7 +50,10 @@
     <number>1</number>
    </property>
    <property name="text">
-    <string>Device communication error:</string>
+    <string>Device communication error</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
    </property>
   </widget>
  </widget>
