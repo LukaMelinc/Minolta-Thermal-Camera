@@ -94,6 +94,22 @@ class ConnectedWindow(QMainWindow, Ui_ConnectedWindow):
         self.close()
 
 
+###################################################################
+########################## REPORT WINDOW ##########################
+###################################################################
+
+Ui_ReportWindow, BaseClass = uic.loadUiType("reportWindow.ui")
+
+class ReportWindow(QMainWindow, Ui_ReportWindow):
+    def __init__(self, parent=None):
+        super(ReportWindow, self).__init__(parent)
+        self.setupUi(self)
+        self.btnOK.clicked.connect(self.close_window)
+
+    def close_window(self):
+        self.close()
+
+
 #################################################################
 ########################## MAIN WINDOW ##########################
 #################################################################
@@ -117,17 +133,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.focusWindow = FocusWindow() # Report window after focusing
         self.E34Window = E34Window()     # Error in communication
         self.connectedWindow = ConnectedWindow() # Succesfuly connected
+        self.reportWindow = ReportWindow() # Succesfuly connected
 
         # Variables
         self.ports = []
         self.portsDescription = []
         self.baudRate = ["4800", "9600", "19200", "38400", "57600", "115200", "230400", "460800", "921600"]
-        self.calibratorStatus = 0
-        self.cameraStatus = 0
-        self.recording = 0
-        self.sample = 0
+        self.calibratorStatus = 0 # is connected or not
+        self.cameraStatus = 0 # is connected or not
+        self.recording = 0 # record button / monitor mode
+        self.sample = 0 # automatic measurements
         self.CameraMode = ["Normal", "Average", "Peak", "Valley"]
+
         self.CalibratorProgNum = ["1", "2", "3", "4", "5", "6", "7", "8"]
+        self.settleTest = ["AUTO", "LIMIT"]
+        self.advance = ["PROMPT", "AUTO"]
+        self.languages = ["ENGLISH", "FRENCH", "SPANISH", "ITALIAN" , "GERMAN", "RUSSIAN", "JAPANESE", "CHINESE"]
+        self.languagesCode = ["ENGL", "FREN", "SPAN", "ITAL", "GERM", "RUSS", "JAP", "CHIN"]
 
         self.measurements = [] # Buffer for collected measurements - Measurements buffer
         self.times = [] # Buffer for measurements times - Time buffer
@@ -158,7 +180,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btnConnectCal.clicked.connect(self.calibratorConnect)      # Connect to calibrator
         self.btnSetEmisivity.clicked.connect(self.setEmisivityCamera)   # Set emisivity
         self.btnExport.clicked.connect(self.exportCSV)                  # Export measurements in CSV file
-        #self.btnAlarmRead.clicked.connect(self.alarmRead)               # Read alarm values
+        #self.btnAlarmRead.clicked.connect(self.alarmRead)              # Read alarm values
         self.btnRecord.clicked.connect(self.recordMeas)                 # Record measurements
         self.btnStartSample.clicked.connect(self.sampleMeas)            # Start measuring - sample
         self.btnCameraStatusRead.clicked.connect(self.readCameraData)   # Read camera data
@@ -166,6 +188,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btnConnectCam.clicked.connect(self.cameraConnect)          # Camera connect in main
         self.tabWidgetMeasure.currentChanged.connect(self.tabMainChange)# Read camera data with tab click
         self.tabFluke.currentChanged.connect(self.tabFlukeChange)       # Read fluke data with tab click
+        self.btnSetIRT.clicked.connect(self.SetCalIRT)                  # Set calibrator emisivity
+        self.btnSetCutout.clicked.connect(self.setCutout)               # Set calibrator cutout temperature
+        self.btnSetScan.clicked.connect(self.setScan)                   # Set calibrator scan
+        self.cmbSettle.addItems(self.settleTest)                        # set settle options
+        self.cmbProgAdvance.addItems(self.advance)                      # program advance options
+        self.cmbProgramNum.addItems(self.CalibratorProgNum)             # program number
+        self.dsrSetProgStepNum.valueChanged.connect(self.readCalProgram)# read selected program 
+        self.cmbLanguage.addItems(self.languages)                       # program language
+        self.btnSaveDisplay.clicked.connect(self.saveLanguage)          # save language settings
+        self.cbPeriod.stateChanged.connect(self.flipPeriod)             # select coma or period
+        self.cbComa.stateChanged.connect(self.flipComa)                 # select coma or period 
+        self.cmbSelectProfile.addItems(self.CalibratorProgNum)          # list programs in measure tab
+        #self.btnSetSetpoint.clicked.connect(self.setSetpoint)          # set calibrator setpoint
+        self.btnSaveProgramOpt.clicked.connect(self.saveProgOprions)    # save language settings
+        self.btnSaveProgramEdit.clicked.connect(self.saveProgEdit)         # save language settings
+
+
 
 
         # add picture 
@@ -209,8 +248,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 response = self.cyclops.CyclopsValleyModeSet()
             case _:
                 response = self.cyclops.CyclopsNormalModeSet()
-        
-        self.lblMode.setText(selectedMode)
+        if response != "":
+            self.lblMode.setText(selectedMode)
+        else:
+            self.E34Window.show()
 
 
     # Grying out widgets #
@@ -223,26 +264,183 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     
     def tabMainChange(self, index):
         # Main tab widget
-        if index == 1: # Measure tab
-            self.alarmRead()
-            self.readCameraData()
+        if index == 0: # Measure tab
+            #if self.calibratorStatus == 1:
+                
+            if self.cameraStatus == 1:
+                self.readCameraData()
+                #self.readCameraInfo()
+
+        if index == 1: # Camera tab
+            if self.cameraStatus == 1:
+                self.readCameraData()
+                self.alarmRead()
+                
         if index == 2: # Calibrator tab
             self.tabFlukeChange(0)
 
 
     def tabFlukeChange(self, index):
-        # Main tab widget
-        if index == 0: # Measure tab
-            response = self.fluke.FlukeSourRateRead()
-            self.dsbScanRate.setValue(response)
-            response = self.fluke.FlukeSourEmisRead()
-            self.dsrSetIRT.setValue(response)
-            response = self.fluke.FlukeSourProtHcutRead()
-            self.lblHardCutout.setText(response)
-            response = self.fluke.FlukeSourProtScutLevRead()
-            self.dsbSoftCutout.setValue(response)
-            #response = self.fluke.FlukeProgOptSettRead()
-            #self.dsbStabLimit.setValue(response)
+        # Fluke tab widget
+        if self.calibratorStatus == 1:
+            if index == 0: # TEMP SETUP
+                response = self.fluke.FlukeSourRateRead() # scan rate
+                self.dsbScanRate.setValue(float(response))
+                response = self.fluke.FlukeSourStabLimRead() # stable limit
+                self.dsbStabLimit.setValue(float(response))
+                response = self.fluke.FlukeSourStabBeepRead() # alarm beep
+                self.cbStableAlarm.setChecked(int(response))
+                response = self.fluke.FlukeSourEmisRead() # emisivity
+                self.dsrSetIRT.setValue(float(response))
+                response = self.fluke.FlukeSourProtScutLevRead() # soft cutout
+                print(response)
+                if response == "": response = 0
+                self.dsbSoftCutout.setValue(float(response))
+                response = self.fluke.FlukeSourProtHcutRead() # hard cutout
+                self.lblHardCutout.setText(response)
+            if index == 1: # PROG MENU
+                response = self.fluke.FlukeProgOptSettRead() # settle test
+                self.cmbSettle.setCurrentIndex(int(response))
+                response = self.fluke.FlukeProgOptSoakRead() # soak time in minutes
+                self.dsrSoakTime.setValue(float(response))
+                response = self.fluke.FlukeProgOptAdvRead() # advance
+                self.cmbProgAdvance.setCurrentIndex(int(response))
+                response = self.fluke.FlukeProgOptCyclRead() # cycles
+                self.dsrCyclesNo.setValue(int(response))
+
+                self.readCalProgram() # Read selected program
+
+            if index == 4:
+                val = self.fluke.FlukeSourSensDataRead()
+                self.lcBlockTemperature.display(float(val))
+
+
+    def saveProgOprions(self):
+        # settle test
+        val = self.cmbSettle.currentText() 
+        if val == "AUTO":
+            self.fluke.FlukeProgOptSettSet(0)
+        elif val == "LIMIT":
+            self.fluke.FlukeProgOptSettSet(1)
+        
+        # soak time in minutes
+        val = self.dsrSoakTime.Value() 
+        self.fluke.FlukeProgOptSoakSet(val) 
+        
+        # Advance
+        val = self.cmbProgAdvance.currentText() 
+        if val == "PROMPT":
+            self.fluke.FlukeProgOptAdvSet(0)
+        elif val == "AUTO":
+            self.fluke.FlukeProgOptAdvSet(1)
+
+        # cycles
+        val = self.dsrCyclesNo.Value() 
+        self.fluke.FlukeProgOptCyclSet(val) 
+        
+
+    # Read selected program parameter         
+    def readCalProgram(self):
+        # select program by number
+        selectedProg = self.cmbProgramNum.currentText()
+        #self.fluke.FlukeProgSelRead(int(selectedProg))
+        name = self.fluke.FlukeProgNameRead(int(selectedProg))
+        self.lblProgName.setText(name)
+        self.lblProgNum.setText(selectedProg)
+        self.leProgName.setText(name)
+        val = self.fluke.FlukeProgParParRead(int(selectedProg), "IRTE")
+        if val == "": val = 0
+        self.dsrSetProgIRT.setValue(float(val))
+        val = self.fluke.FlukeProgParParRead(int(selectedProg), "DIST")
+        if val == "": val = 0
+        self.dsrSetProgDistance.setValue(val)
+        val = self.fluke.FlukeProgParParRead(int(selectedProg), "APER")
+        self.cbProgAperture.setChecked(bool(val))
+        steps = self.fluke.FlukeProgParParRead(int(selectedProg), "POIN")
+        self.dsrSetProgStepNum.setValue(steps)
+
+        for i in range(8):
+            if i < steps:
+                enable = 1
+            else:
+                enable = 0
+            if i == 0: self.dsrSP1.setEnabled(enable)
+            if i == 1: self.dsrSP2.setEnabled(enable)
+            if i == 2: self.dsrSP3.setEnabled(enable)
+            if i == 3: self.dsrSP4.setEnabled(enable)
+            if i == 4: self.dsrSP5.setEnabled(enable)
+            if i == 5: self.dsrSP6.setEnabled(enable)
+            if i == 6: self.dsrSP7.setEnabled(enable)
+            if i == 7: self.dsrSP8.setEnabled(enable)
+
+        for i in range(steps):
+            command = "SPO" + i
+            val = self.fluke.FlukeProgNameRead(int(selectedProg), str(command))
+            if i == 0: self.dsrSP1.setValue(val)
+            if i == 1: self.dsrSP2.setValue(val)
+            if i == 2: self.dsrSP3.setValue(val)
+            if i == 3: self.dsrSP4.setValue(val)
+            if i == 4: self.dsrSP5.setValue(val)
+            if i == 5: self.dsrSP6.setValue(val)
+            if i == 6: self.dsrSP7.setValue(val)
+            if i == 7: self.dsrSP8.setValue(val)
+            time.sleep(0.05)
+                
+    
+    # Save selected program parameters
+    def saveProgEdit(self):
+        # select program by number
+        selectedProg = self.cmbProgramNum.currentText()
+        name = self.lblProgName.text()
+        self.fluke.FlukeProgNameSet(int(selectedProg), name)
+        val = self.dsrSetProgIRT.value()
+        self.fluke.FlukeProgParParSet(int(selectedProg), "IRTE", val)
+        val = self.dsrSetProgDistance.value()
+        self.fluke.FlukeProgParParSet(int(selectedProg), "DIST", val)
+        val = self.cbProgAperture.isChecked()
+        if val == True: 
+            val = 1
+        else:
+            val = 0
+        self.fluke.FlukeProgParParSet(int(selectedProg), "APER", val)
+        steps = self.dsrSetProgStepNum.value()
+        self.fluke.FlukeProgParParSet(int(selectedProg), "POIN", steps)
+        for i in range(steps):
+            if i == 0: val = self.dsrSP1.value()
+            if i == 1: val = self.dsrSP2.value()
+            if i == 2: val = self.dsrSP3.value()
+            if i == 3: val = self.dsrSP4.value()
+            if i == 4: val = self.dsrSP5.value()
+            if i == 5: val = self.dsrSP6.value()
+            if i == 6: val = self.dsrSP7.value()
+            if i == 7: val = self.dsrSP8.value()
+            command = "SPO" + i
+            val = self.fluke.FlukeProgNameSet(int(selectedProg), str(command), val)
+            time.sleep(0.05)
+        self.reportWindow.show()
+        self.reportWindow.lblReport.setText("Successful")
+
+
+    # set soft cutout temperature - PROTECTED WITH PASSWORD
+    def saveLanguage(self):
+        return None
+    
+
+    # Set scan parameters
+    def setScan(self):
+        self.fluke.FlukeSourRateSet(self.dsbScanRate.value())
+        self.fluke.FlukeSourStabLimSet(self.dsbStabLimit.value())
+        self.fluke.FlukeSourStabBeepSet(self.cbStableAlarm.isChecked())
+
+    
+    # Flip check box for . and ,
+    def flipComa(self):
+            self.cbPeriod.setChecked(False)
+            self.cbComa.setChecked(True)
+
+    def flipPeriod(self):
+            self.cbComa.setChecked(False)
+            self.cbPeriod.setChecked(True)
 
 
     # Set alarm values #
@@ -267,13 +465,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         else:
             soundAlarm = "C"
         
-        self.cyclops.CyclopsAlarmSet(upperAlarm, upperTemp, lowerAlarm, lowerTemp, soundAlarm)
+        response = self.cyclops.CyclopsAlarmSet(upperAlarm, upperTemp, lowerAlarm, lowerTemp, soundAlarm)
+        if response != "OK!":
+            self.E34Window.show()
+
 
     # Connect fluke calibrator #
     def calibratorConnect(self):
         if self.calibratorStatus == 0:
-            selectedBaud = self.cmbBaud.currentText()
-            selectedPort = self.cmbPortsCal.currentText()
+            selectedBaud = self.cmbBaudCal.currentText()
+            selectedPort = self.cmbPorts.currentText()
             
             if selectedPort == "" or selectedBaud == "":
                 self.errorWindow.show() # ERROR - unselected baud or port
@@ -287,6 +488,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     self.lblCalibratorStatus.setText("Connected")
                     self.btnConnectCal.setText("Disconnect")
                     self.calibratorStatus = 1
+                    self.fluke.FlukeRegisterReset()
         else:
             report = self.fluke.FlukeCloseSerial()
             if report != None:
@@ -340,8 +542,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     # Read alarm setting from camera and set them in program #
     def alarmRead(self):
         response = self.cyclops.CyclopsAlarmRead()
+        #print(response)
         if response == "E34" or response == "":
             self.E34Window.show() # ERROR
+            return None
 
         splitValue = list(response)
         # Alarm high
@@ -398,11 +602,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         
         if self.recording == 1:
             self.btnRecord.setText("Start")
-            self.cyclops.CyclopsCancleModeSet()
-            self.recording = 0
             if self.recordThread is not None and self.recordThread.is_alive():
                 self.stopEvent.set() # stop thread
                 self.recordThread.join() 
+            self.cyclops.CyclopsCancleModeSet()
+            self.recording = 0
             return None
 
     def Measure(self, output):
@@ -493,23 +697,82 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.lblUnits.setText("°C")
             elif splitValue[0] == "F":
                 self.lblUnits.setText("°F")
-            emisivity = int(splitValue[1] + splitValue[2] + splitValue[3] + splitValue[4])
-            self.lblEmisivity.setText(str(emisivity))
+            emisivity = splitValue[1] + splitValue[2] + splitValue[3] + splitValue[4]
+            self.lblEmisivity.setText(emisivity)
+            self.dsbCameraEmisivity.setValue(float(emisivity))
             if splitValue[5] == "H":
                 self.lblMeasurMode.setText("Manual")
             elif splitValue[5] == "M":
                 self.lblMeasurMode.setText("Monitor")   
             if splitValue[6] == "A":
-                self.lblMeasurMode.setText("AF")
+                self.lblFocusMode.setText("AF")
             elif splitValue[6] == "M":
-                self.lblMeasurMode.setText("MANU")    
+                self.lblFocusMode.setText("MANU")    
+            """    
             if splitValue[7] == "A":
                 self.lblMeasurMode.setText("Over!")
             elif splitValue[7] == "N":
-                self.lblMeasurMode.setText("In range")     
+                self.lblMeasurMode.setText("In range")  """   
+            self.readCameraInfo()
         else:
             self.E34Window.show() # ERROR
 
+
+    # data returned by each function
+    def readCameraInfo(self):
+        response = self.cyclops.CyclopsCancleModeSet()
+        #print(response)
+        if len(response) == 8:
+            splitValue = list(response)
+
+            if splitValue[0] == "L":
+                self.lblUnits.setText("°C")
+            elif splitValue[0] == "F":
+                self.lblUnits.setText("°F")
+
+            if splitValue[1] == "N":
+                self.lblMeasurMode.setText("Normal")
+                self.lblMode.setText("Normal")
+                self.lblAlarmStatus.setText("Normal") 
+            elif splitValue[1] == "P":
+                self.lblMeasurMode.setText("Peak") 
+                self.lblMode.setText("Peak")   
+                self.lblAlarmStatus.setText("Peak") 
+            elif splitValue[1] == "G":
+                self.lblMeasurMode.setText("Average") 
+                self.lblMode.setText("Average") 
+                self.lblAlarmStatus.setText("Average") 
+            elif splitValue[1] == "V":
+                self.lblMeasurMode.setText("Valley") 
+                self.lblMode.setText("Valley") 
+                self.lblAlarmStatus.setText("Valley") 
+            elif splitValue[1] == "A":
+                self.lblAlarmStatus.setText("Over!") 
+            elif splitValue[1] == "O":
+                self.lblAlarmStatus.setText("Over MAX!") 
+            elif splitValue[1] == "U":
+                self.lblAlarmStatus.setText("Under MIN!") 
+            else:
+                self.lblAlarmStatus.setText("OK!")
+
+            if splitValue[2] == "C":
+                self.lblState.setText("Monitor")
+            elif splitValue[2] == "H":
+                self.lblState.setText("Hold")   
+            else:
+                self.lblState.setText("Idle") 
+        else:
+            self.E34Window.show() # ERROR
+
+
+    # Set fluke emisivity
+    def SetCalIRT(self):
+        self.fluke.FlukeSourEmisSet(self.dsrSetIRT.value())
+
+
+    # Set fluke cutout temperature
+    def setCutout(self):
+        return None
 
     # List all available serial ports #
     def list_serial_ports(self):

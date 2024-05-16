@@ -65,9 +65,9 @@ class Cyclops:
     def CyclopsAlarmRead(self):
         data = 'AR' + '\r'
         self.serialport.write(data.encode('ascii'))
-        time.sleep(0.5)
+        time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(f"Response: {response}")
         return response
 
 

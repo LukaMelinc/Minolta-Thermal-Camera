@@ -170,9 +170,9 @@ class Fluke:
     # - par:
     # SPOi = setpoints (1-8), where i = the value of one setpoint
     # POIN = the number of setpoints for the indicated program
-    # IRTE= the emmissivity ε value 0.9 to 1.0, default 0.95
-    # DIST= the distance from the target to the UUT in cm, 0.1 to 999.9
-    # APER= yes or no to promt user for the aperature. 0 = none, 1 = prompt user
+    # IRTE = the emmissivity ε value 0.9 to 1.0, default 0.95
+    # DIST = the distance from the target to the UUT in cm, 0.1 to 999.9
+    # APER = yes or no to promt user for the aperature. 0 = none, 1 = prompt user
     def FlukeProgParParRead(self, n, par):
         data = 'PROG[' + str(n) + ']PAR? ' + par + '?' + ' \r'
         self.serialport.write(data.encode('ascii'))
@@ -187,9 +187,9 @@ class Fluke:
     # - par:
     # SPOi = setpoints (1-8), where i = the value of one setpoint
     # POIN = the number of setpoints for the indicated program
-    # IRTE= the emmissivity ε value 0.9 to 1.0, default 0.95
-    # DIST= the distance from the target to the UUT in cm, 0.1 to 999.9
-    # APER= yes or no to promt user for the aperature. 0 = none, 1 = prompt user
+    # IRTE = the emmissivity ε value 0.9 to 1.0, default 0.95
+    # DIST = the distance from the target to the UUT in cm, 0.1 to 999.9
+    # APER = yes or no to promt user for the aperature. 0 = none, 1 = prompt user
     def FlukeProgParParSet(self, n, par, val):
         data = 'PROG[' + str(n) + ']PAR ' + par + ',' + str(val) + ' \r'
         self.serialport.write(data.encode('ascii'))
