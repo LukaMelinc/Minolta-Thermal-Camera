@@ -184,7 +184,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btnConnectCal.clicked.connect(self.calibratorConnect)      # Connect to calibrator
         self.btnSetEmisivity.clicked.connect(self.setEmisivityCamera)   # Set emisivity
         self.btnExport.clicked.connect(self.exportCSV)                  # Export measurements in CSV file
-        #self.btnAlarmRead.clicked.connect(self.alarmRead)              # Read alarm values
         self.btnRecord.clicked.connect(self.recordMeas)                 # Record measurements
         self.btnStartSample.clicked.connect(self.sampleMeas)            # Start measuring - sample
         self.btnCameraStatusRead.clicked.connect(self.readCameraData)   # Read camera data

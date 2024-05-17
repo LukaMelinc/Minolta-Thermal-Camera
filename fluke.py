@@ -38,13 +38,13 @@ class Fluke:
 
     # Clear the status registers
     def FlukeRegisterReset(self):
-        data = '*CLS' + ' \r'
+        data = '*CLS' + '\r'
         self.serialport.write(data.encode('ascii'))
 
 
     # Read the product information
     def FlukeID(self):
-        data = '*IDN?' + ' \r'
+        data = '*IDN?' + '\r'
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
@@ -54,7 +54,7 @@ class Fluke:
 
     # Read the main heat output percent
     def FlukeOutpData(self):
-        data = '*OUTP:DATA?' + ' \r'
+        data = '*OUTP:DATA?' + '\r'
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
@@ -63,7 +63,7 @@ class Fluke:
 
     # Read the Main Heat output
     def FlukeOutpStatRead(self):
-        data = '*OUTP:STAT?' + ' \r'
+        data = '*OUTP:STAT?' + '\r'
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
@@ -74,14 +74,14 @@ class Fluke:
     # Set the Main Heat output enable
     # - state: off [0] or on [1]
     def FlukeOutpStatSet(self, state):
-        data = 'OUTP:STAT ' + str(state) + ' \r'
+        data = 'OUTP:STAT ' + str(state) + '\r'
         self.serialport.write(data.encode('ascii'))
 
 
     # Read the program name by identifier
     # - n: 1 to 8
     def FlukeProgNameRead(self, n):
-        data = 'PROG:[' + str(n) + ']NAME?' + ' \r'
+        data = 'PROG:[' + str(n) + ']NAME?' + '\r'
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.5)
         response = self.serialport.readline().decode().strip()
@@ -93,13 +93,13 @@ class Fluke:
     # - n: 1 to 8
     # - name: characters 0 to 9, A to Z and -
     def FlukeProgNameSet(self, n, name):
-        data = 'PROG:[' + str(n) + ']NAME ' + name + ' \r'
+        data = 'PROG:[' + str(n) + ']NAME ' + name + '\r'
         self.serialport.write(data.encode('ascii'))
 
 
     # Read the program advance option
     def FlukeProgOptAdvRead(self):
-        data = 'PROG:OPT:ADV?' + ' \r'
+        data = 'PROG:OPT:ADV?' + '\r'
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
@@ -110,13 +110,13 @@ class Fluke:
     # Set the program advance option
     # - n; 0 (prompt) or 1 (continue automatically)
     def FlukeProgOptAdvSet(self, n):
-        data = 'PROG:OPT:ADV ' + str(n)+ ' \r'
+        data = 'PROG:OPT:ADV ' + str(n)+ '\r'
         self.serialport.write(data.encode('ascii'))
 
 
     # Read the program cyclesS
     def FlukeProgOptCyclRead(self):
-        data = 'PROG:OPT:CYCL?' + ' \r'
+        data = 'PROG:OPT:CYCL?' + '\r'
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
@@ -127,13 +127,13 @@ class Fluke:
     # Set the program cycles
     # - n: 1 to 999, default 1.
     def FlukeProgOptCyclSet(self, n):
-        data = 'PROG:OPT:CYCL ' + str(n)+ ' \r'
+        data = 'PROG:OPT:CYCL ' + str(n)+ '\r'
         self.serialport.write(data.encode('ascii'))
 
 
     # Read the program settle option
     def FlukeProgOptSettRead(self):
-        data = 'PROG:OPT:SETT?' + ' \r'
+        data = 'PROG:OPT:SETT?' + '\r'
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
@@ -144,13 +144,13 @@ class Fluke:
     # Read or set the program settle option
     # -n: 0 (apply default limit) or 1 (apply STABLE LIMIT setting).
     def FlukeProgOptSettSet(self, n):
-        data = 'PROG:OPT:SETT ' + str(n)+ ' \r'
+        data = 'PROG:OPT:SETT ' + str(n)+ '\r'
         self.serialport.write(data.encode('ascii'))
 
 
     # Read the program soak time, 0 to 500 minutes. Default 1
     def FlukeProgOptSoakRead(self):
-        data = 'PROG:OPT:SOAK?' + ' \r'
+        data = 'PROG:OPT:SOAK?' + '\r'
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
@@ -161,7 +161,7 @@ class Fluke:
     # Read or set the program soak time
     # - n: 0 to 500 minutes. Default 1
     def FlukeProgOptSoakSet(self, n):
-        data = 'PROG:OPT:SOAK ' + str(n)+ ' \r'
+        data = 'PROG:OPT:SOAK ' + str(n)+ '\r'
         self.serialport.write(data.encode('ascii'))
 
 
@@ -174,7 +174,7 @@ class Fluke:
     # DIST = the distance from the target to the UUT in cm, 0.1 to 999.9
     # APER = yes or no to promt user for the aperature. 0 = none, 1 = prompt user
     def FlukeProgParParRead(self, n, par):
-        data = 'PROG[' + str(n) + ']PAR? ' + par + '?' + ' \r'
+        data = 'PROG[' + str(n) + ']PAR? ' + par + '?' + '\r'
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
@@ -191,13 +191,13 @@ class Fluke:
     # DIST = the distance from the target to the UUT in cm, 0.1 to 999.9
     # APER = yes or no to promt user for the aperature. 0 = none, 1 = prompt user
     def FlukeProgParParSet(self, n, par, val):
-        data = 'PROG[' + str(n) + ']:PAR ' + par + ',' + str(val) + ' \r'
+        data = 'PROG[' + str(n) + ']:PAR ' + par + ',' + str(val) + '\r'
         self.serialport.write(data.encode('ascii'))
 
 
     # Read a list of program parameters *
     def FlukeProgParCatRead(self):
-        data = 'PROG:OPT:SOAC?' + ' \r'
+        data = 'PROG:OPT:SOAC?' + '\r'
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
@@ -214,7 +214,7 @@ class Fluke:
     # Read the manual program advance prompt state
     # 0 (operating or program off) or 1 (waiting for user input)
     def FlukeProgPromStatRead(self):
-        data = 'PROG:STAT?' + ' \r'
+        data = 'PROG:STAT?' + '\r'
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
@@ -235,7 +235,7 @@ class Fluke:
     # Set the program selection
     # - n: 1 to 8
     def FlukeProgSelSet(self, n):
-        data = 'PROG:SEL ' + str(n) + ' \r'
+        data = 'PROG:SEL ' + str(n) + '\r'
         self.serialport.write(data.encode('ascii'))
 
     
@@ -252,7 +252,7 @@ class Fluke:
     # Read or set the program execution state for the selected program
     # - state: 0(off) or 1(run)
     def FlukeProgStatSet(self, state):
-        data = 'PROG:STAT ' + str(state) + ' \r'
+        data = 'PROG:STAT ' + str(state) + '\r'
         self.serialport.write(data.encode('ascii'))
 
 
