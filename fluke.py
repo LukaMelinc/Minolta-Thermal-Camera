@@ -74,7 +74,7 @@ class Fluke:
     # Set the Main Heat output enable
     # - state: off [0] or on [1]
     def FlukeOutpStatSet(self, state):
-        data = '*OUTP:STAT ' + str(state) + ' \r'
+        data = 'OUTP:STAT ' + str(state) + ' \r'
         self.serialport.write(data.encode('ascii'))
 
 
@@ -83,9 +83,9 @@ class Fluke:
     def FlukeProgNameRead(self, n):
         data = 'PROG:[' + str(n) + ']NAME?' + ' \r'
         self.serialport.write(data.encode('ascii'))
-        time.sleep(0.05)
+        time.sleep(0.5)
         response = self.serialport.readline().decode().strip()
-        #print(f"Response: {response}")
+        print(f"Response: {response}")
         return response
 
 
@@ -191,7 +191,7 @@ class Fluke:
     # DIST = the distance from the target to the UUT in cm, 0.1 to 999.9
     # APER = yes or no to promt user for the aperature. 0 = none, 1 = prompt user
     def FlukeProgParParSet(self, n, par, val):
-        data = 'PROG[' + str(n) + ']PAR ' + par + ',' + str(val) + ' \r'
+        data = 'PROG[' + str(n) + ']:PAR ' + par + ',' + str(val) + ' \r'
         self.serialport.write(data.encode('ascii'))
 
 
@@ -555,7 +555,7 @@ class Fluke:
         return response
 
     
-    # Read or set the control temperature stability limit
+    # Set the control temperature stability limit
     # - n: positive real value. Range = {0.01 to 5.0 (°C)}; Default: 0.1 (°C) (Model 4180) 0.4 (°C) (Model 4181)
     def FlukeSourStabLimSet(self, n):
         data = 'SOUR:STAB:LIM ' + str(n) + '\r'
@@ -617,7 +617,7 @@ class Fluke:
     
     # Set serial interface baud rate 
     # - baud: standard baud rate value. Range baud = {1200, 2400, 4800, 9600, 19200, and 38400}; Default: 9600
-    def FlukeSystBeepKeybSet(self, baud):
+    def FlukeSystBaudSet(self, baud):
         data = 'SYST:COMM:SER:BAUD ' + str(baud) + '\r'
         self.serialport.write(data.encode('ascii'))
 

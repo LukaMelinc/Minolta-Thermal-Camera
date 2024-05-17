@@ -143,6 +143,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.cameraStatus = 0 # is connected or not
         self.recording = 0 # record button / monitor mode
         self.sample = 0 # automatic measurements
+        self.calibration = 0 # state of calibration process
         self.CameraMode = ["Normal", "Average", "Peak", "Valley"]
 
         self.CalibratorProgNum = ["1", "2", "3", "4", "5", "6", "7", "8"]
@@ -150,6 +151,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.advance = ["PROMPT", "AUTO"]
         self.languages = ["ENGLISH", "FRENCH", "SPANISH", "ITALIAN" , "GERMAN", "RUSSIAN", "JAPANESE", "CHINESE"]
         self.languagesCode = ["ENGL", "FREN", "SPAN", "ITAL", "GERM", "RUSS", "JAP", "CHIN"]
+        self.passwordProtection = ["HIGH", "LOW"]
+        self.baudRateCal = ["1200", "2400", "4800", "9600", "19200", "38400"]
+        self.wavelengt = ["8-14um", "Undefined"]
 
         self.measurements = [] # Buffer for collected measurements - Measurements buffer
         self.times = [] # Buffer for measurements times - Time buffer
@@ -168,8 +172,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.tabFluke.setCurrentIndex(0)
         self.btnRefreshCal.clicked.connect(self.list_serial_ports)      # Refresh button 
         self.btnRefreshCam.clicked.connect(self.list_serial_ports)      # Refresh button 
-        self.cmbBaudCal.addItems(self.baudRate)                         # BaudRate combo box - fluke
-        self.cmbBaudCam.addItems(self.baudRate)                         # BaudRate combo box - cyclopse
+        self.cmbBaudCal.addItems(self.baudRateCal)                         # BaudRate combo box - fluke
+        self.cmbBaudCam.addItems(self.baudRate)                      # BaudRate combo box - cyclopse
         self.btnExit.clicked.connect(self.appExit)                      # Exit
         self.cmbCamMode.addItems(self.CameraMode)                       # Measuring modes of camera
         self.btnAutofocus.clicked.connect(self.focus)                   # Triger auto focus of camera
@@ -194,15 +198,26 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.cmbSettle.addItems(self.settleTest)                        # set settle options
         self.cmbProgAdvance.addItems(self.advance)                      # program advance options
         self.cmbProgramNum.addItems(self.CalibratorProgNum)             # program number
-        self.dsrSetProgStepNum.valueChanged.connect(self.readCalProgram)# read selected program 
+        self.dsrSetProgStepNum.valueChanged.connect(self.setSteps)# read selected program 
         self.cmbLanguage.addItems(self.languages)                       # program language
         self.btnSaveDisplay.clicked.connect(self.saveLanguage)          # save language settings
         self.cbPeriod.stateChanged.connect(self.flipPeriod)             # select coma or period
         self.cbComa.stateChanged.connect(self.flipComa)                 # select coma or period 
         self.cmbSelectProfile.addItems(self.CalibratorProgNum)          # list programs in measure tab
-        #self.btnSetSetpoint.clicked.connect(self.setSetpoint)          # set calibrator setpoint
+        self.btnSetSetpoint.clicked.connect(self.setSetpoint)          # set calibrator setpoint
         self.btnSaveProgramOpt.clicked.connect(self.saveProgOprions)    # save language settings
-        self.btnSaveProgramEdit.clicked.connect(self.saveProgEdit)         # save language settings
+        self.btnSaveProgramEdit.clicked.connect(self.saveProgEdit)      # save language settings
+        self.cmbProtection.addItems(self.passwordProtection)            # password enable
+        self.cmbBaudCalChange.addItems(self.baudRateCal)                # calibrator baud rate
+        self.cmbWavelenght.addItems(self.wavelengt)                     # calibrator baud rate
+        self.btnReadINFO.clicked.connect(self.calibratorInfo)           # save language settings
+        self.cmbProgramNum.currentIndexChanged.connect(self.readCalProgram)     # read selected program
+        self.cmbSelectProfile.currentIndexChanged.connect(self.selectProfile)   # read selected program
+        self.btnAdvanceNext.clicked.connect(self.fluke.FlukeProgPromAdvSet) # save language settings
+        self.btnStartCalibration.clicked.connect(self.startCalibration) # save language settings
+        self.btnStopHeating.clicked.connect(self.stopHeater) # turn off heater
+
+
 
 
 
@@ -232,6 +247,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         formatted_date = current_time.toString('dd.MM.yyyy')
         self.lblTime.setText(formatted_time)
         self.lblDate.setText(formatted_date)
+
+    
+    def stopHeater(self):
+        self.fluke.FlukeOutpStatSet(0)
 
 
     # Set camera mode #
@@ -307,10 +326,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.cmbProgAdvance.setCurrentIndex(int(response))
                 response = self.fluke.FlukeProgOptCyclRead() # cycles
                 self.dsrCyclesNo.setValue(int(response))
-
                 self.readCalProgram() # Read selected program
 
-            if index == 4:
+            if index == 3: # SYSTEM MENU
+                self.readSystemMenu()
+
+            if index == 4: # VIEW TEMP
                 val = self.fluke.FlukeSourSensDataRead()
                 self.lcBlockTemperature.display(float(val))
 
@@ -344,7 +365,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # select program by number
         selectedProg = self.cmbProgramNum.currentText()
         #self.fluke.FlukeProgSelRead(int(selectedProg))
-        name = self.fluke.FlukeProgNameRead(int(selectedProg))
+        name = self.fluke.FlukeProgNameRead(selectedProg)
         self.lblProgName.setText(name)
         self.lblProgNum.setText(selectedProg)
         self.leProgName.setText(name)
@@ -357,6 +378,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         val = self.fluke.FlukeProgParParRead(int(selectedProg), "APER")
         self.cbProgAperture.setChecked(bool(val))
         steps = self.fluke.FlukeProgParParRead(int(selectedProg), "POIN")
+        if steps == "" or steps == 0: 
+            steps = 1
+        else:
+            steps = int(steps)
+
         self.dsrSetProgStepNum.setValue(steps)
 
         for i in range(8):
@@ -373,9 +399,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if i == 6: self.dsrSP7.setEnabled(enable)
             if i == 7: self.dsrSP8.setEnabled(enable)
 
-        for i in range(steps):
-            command = "SPO" + i
-            val = self.fluke.FlukeProgNameRead(int(selectedProg), str(command))
+        for i in range(8):
+            if i < steps - 1:
+                command = "SPO" + str(i + 1)
+                val = self.fluke.FlukeProgParParRead(int(selectedProg), command)
+                print("return", val)
+                val = float(val)
+            else:
+                val = 0
             if i == 0: self.dsrSP1.setValue(val)
             if i == 1: self.dsrSP2.setValue(val)
             if i == 2: self.dsrSP3.setValue(val)
@@ -384,7 +415,28 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if i == 5: self.dsrSP6.setValue(val)
             if i == 6: self.dsrSP7.setValue(val)
             if i == 7: self.dsrSP8.setValue(val)
-            time.sleep(0.05)
+            #time.sleep(0.05)
+
+    def setSteps(self):
+        steps = self.dsrSetProgStepNum.value()
+        if steps == "" or steps == 0: 
+            steps = 1
+        else:
+            steps = int(steps)
+
+        for i in range(8):
+            if i < steps:
+                enable = 1
+            else:
+                enable = 0
+            if i == 0: self.dsrSP1.setEnabled(enable)
+            if i == 1: self.dsrSP2.setEnabled(enable)
+            if i == 2: self.dsrSP3.setEnabled(enable)
+            if i == 3: self.dsrSP4.setEnabled(enable)
+            if i == 4: self.dsrSP5.setEnabled(enable)
+            if i == 5: self.dsrSP6.setEnabled(enable)
+            if i == 6: self.dsrSP7.setEnabled(enable)
+            if i == 7: self.dsrSP8.setEnabled(enable)
                 
     
     # Save selected program parameters
@@ -405,7 +457,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.fluke.FlukeProgParParSet(int(selectedProg), "APER", val)
         steps = self.dsrSetProgStepNum.value()
         self.fluke.FlukeProgParParSet(int(selectedProg), "POIN", steps)
-        for i in range(steps):
+        for i in range(int(steps)):
             if i == 0: val = self.dsrSP1.value()
             if i == 1: val = self.dsrSP2.value()
             if i == 2: val = self.dsrSP3.value()
@@ -414,16 +466,50 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if i == 5: val = self.dsrSP6.value()
             if i == 6: val = self.dsrSP7.value()
             if i == 7: val = self.dsrSP8.value()
-            command = "SPO" + i
-            val = self.fluke.FlukeProgNameSet(int(selectedProg), str(command), val)
+            command = "SPO" + str(i + 1)
+            val = self.fluke.FlukeProgParParSet(int(selectedProg), str(command), val)
             time.sleep(0.05)
         self.reportWindow.show()
         self.reportWindow.lblReport.setText("Successful")
 
 
+    # Read all the data to show in system menu
+    def readSystemMenu(self):
+        code = self.fluke.FlukeSystLangRead() # language
+        self.cmbLanguage.setCurrentIndex(int(self.languagesCode.index(code)))
+        val = self.fluke.FlukeSystDecFormRead() # period / coma
+        if val == "0":
+            self.cbPeriod.setChecked(1)
+            self.cbComa.setChecked(0)
+        elif val == "1":
+            self.cbPeriod.setChecked(0)
+            self.cbComa.setChecked(1)
+        val = self.fluke.FlukeSystBeepKeybRead() # keyboard sound
+        self.cbAudioOnOff.setChecked(int(val))
+        code = self.fluke.baudrate
+        self.cmbBaudCalChange.setCurrentIndex(int(self.baudRateCal.index(str(code)))) # baud rate
+        val = self.fluke.FlukeSystCommSerLinRead() # line feed
+        self.cbLinefeed.setChecked(int(val))
+
+
+        
+
+
     # set soft cutout temperature - PROTECTED WITH PASSWORD
     def saveLanguage(self):
-        return None
+        language = self.cmbLanguage.currentText()
+        code = self.languagesCode[self.languages.index(language)]
+        self.fluke.FlukeSystLangSet(code)
+        if self.cbPeriod.isChecked() == 1:
+            self.fluke.FlukeSystDecFormSet(0)
+        else:
+            self.fluke.FlukeSystDecFormSet(1)
+
+        if self.cbAudioOnOff.isChecked() == 1:
+            self.fluke.FlukeSystBeepKeybSet(1)
+        else:
+            self.fluke.FlukeSystBeepKeybSet(0)
+
     
 
     # Set scan parameters
@@ -441,6 +527,52 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def flipPeriod(self):
             self.cbComa.setChecked(False)
             self.cbPeriod.setChecked(True)
+
+    
+    # list calibrator info
+    def calibratorInfo(self):
+        id = self.fluke.FlukeID() # model
+        self.lblModel.setText(id[:10])
+        self.lblSerial.setText(id[10:]) # serial
+        date = self.fluke.FlukeSourCalDateRead() # calib. data
+        self.lblCalDate.setText(date)
+        fw = self.fluke.FlukeSystCodVersRead() # fw version
+        self.lblFWVer.setText(fw)
+
+
+    # select profile for calibration in main window
+    def selectProfile(self):
+        selectedProg = self.cmbSelectProfile.currentText()
+        name = self.fluke.FlukeProgNameRead(int(selectedProg))
+        self.lblProgNameMeasurePage.setText(name)
+        response = self.fluke.FlukeProgOptAdvRead() # advance
+        if response == "1":
+            self.btnAdvanceNext.setEnabled(1)
+        else:
+            self.btnAdvanceNext.setEnabled(0)
+
+    
+    # start calibration profile    
+    def startCalibration(self):
+        if self.calibration == 0:
+            if self.sample == 1:
+                self.sampleMeas() # stop sampling event
+                self.sampleMeas() # start sampling event
+            else:
+                self.sampleMeas() # start sampling event
+                self.btnStartCalibration.setText("Stop")
+                self.calibration = 1
+                # start calibrator
+        #else:
+
+
+    # turn on the calibrator
+    def setSetpoint(self):
+        # FlukeOutpStatRead
+        # FlukeOutpData
+        val = self.dsbSetpoint.value()
+        self.fluke.FlukeSourSpoSet(val)
+        self.fluke.FlukeOutpStatSet(1)
 
 
     # Set alarm values #
