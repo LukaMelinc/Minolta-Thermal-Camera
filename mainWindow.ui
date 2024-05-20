@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1240</width>
+    <width>1231</width>
     <height>710</height>
    </rect>
   </property>
@@ -795,7 +795,7 @@
       <rect>
        <x>980</x>
        <y>370</y>
-       <width>191</width>
+       <width>201</width>
        <height>23</height>
       </rect>
      </property>
@@ -836,6 +836,46 @@
      </property>
      <property name="text">
       <string>Stop</string>
+     </property>
+    </widget>
+    <widget class="QLCDNumber" name="lcdStandardDeviation">
+     <property name="geometry">
+      <rect>
+       <x>840</x>
+       <y>522</y>
+       <width>81</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
+     <property name="digitCount">
+      <number>4</number>
+     </property>
+     <property name="segmentStyle">
+      <enum>QLCDNumber::Flat</enum>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_68">
+     <property name="geometry">
+      <rect>
+       <x>650</x>
+       <y>520</y>
+       <width>181</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>12</pointsize>
+      </font>
+     </property>
+     <property name="text">
+      <string>Standard deviation:</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
      </property>
     </widget>
    </widget>
@@ -1811,8 +1851,8 @@ IR thermometer</string>
     <widget class="QLabel" name="label_3">
      <property name="geometry">
       <rect>
-       <x>50</x>
-       <y>20</y>
+       <x>10</x>
+       <y>10</y>
        <width>341</width>
        <height>41</height>
       </rect>
@@ -2011,7 +2051,7 @@ Precision Infrared Calibrator</string>
       </rect>
      </property>
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="tabTemp">
       <attribute name="title">
@@ -2847,6 +2887,9 @@ protected!</string>
           <height>22</height>
          </rect>
         </property>
+        <property name="maximum">
+         <double>500.000000000000000</double>
+        </property>
        </widget>
        <widget class="QDoubleSpinBox" name="dsrSP2">
         <property name="geometry">
@@ -2856,6 +2899,9 @@ protected!</string>
           <width>81</width>
           <height>22</height>
          </rect>
+        </property>
+        <property name="maximum">
+         <double>500.000000000000000</double>
         </property>
        </widget>
        <widget class="QDoubleSpinBox" name="dsrSP3">
@@ -2867,6 +2913,9 @@ protected!</string>
           <height>22</height>
          </rect>
         </property>
+        <property name="maximum">
+         <double>500.000000000000000</double>
+        </property>
        </widget>
        <widget class="QDoubleSpinBox" name="dsrSP4">
         <property name="geometry">
@@ -2876,6 +2925,9 @@ protected!</string>
           <width>81</width>
           <height>22</height>
          </rect>
+        </property>
+        <property name="maximum">
+         <double>500.000000000000000</double>
         </property>
        </widget>
        <widget class="QDoubleSpinBox" name="dsrSP5">
@@ -2887,6 +2939,9 @@ protected!</string>
           <height>22</height>
          </rect>
         </property>
+        <property name="maximum">
+         <double>500.000000000000000</double>
+        </property>
        </widget>
        <widget class="QDoubleSpinBox" name="dsrSP6">
         <property name="geometry">
@@ -2896,6 +2951,9 @@ protected!</string>
           <width>81</width>
           <height>22</height>
          </rect>
+        </property>
+        <property name="maximum">
+         <double>500.000000000000000</double>
         </property>
        </widget>
        <widget class="QDoubleSpinBox" name="dsrSP7">
@@ -2907,6 +2965,9 @@ protected!</string>
           <height>22</height>
          </rect>
         </property>
+        <property name="maximum">
+         <double>500.000000000000000</double>
+        </property>
        </widget>
        <widget class="QDoubleSpinBox" name="dsrSP8">
         <property name="geometry">
@@ -2916,6 +2977,9 @@ protected!</string>
           <width>81</width>
           <height>22</height>
          </rect>
+        </property>
+        <property name="maximum">
+         <double>500.000000000000000</double>
         </property>
        </widget>
        <widget class="QLabel" name="label_59">
@@ -3899,7 +3963,7 @@ protected!</string>
          <x>660</x>
          <y>200</y>
          <width>191</width>
-         <height>91</height>
+         <height>93</height>
         </rect>
        </property>
        <property name="font">
@@ -3917,7 +3981,7 @@ protected!</string>
         <string>Settings in these window can
 brick serial communication
 with calibrator.
-Some settings requires
+Some settings requires a
 master password!</string>
        </property>
       </widget>
@@ -4052,22 +4116,6 @@ master password!</string>
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
        </property>
       </widget>
-      <widget class="QLabel" name="label_128">
-       <property name="geometry">
-        <rect>
-         <x>430</x>
-         <y>340</y>
-         <width>111</width>
-         <height>20</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>Calibration date:</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-       </property>
-      </widget>
       <widget class="QDoubleSpinBox" name="dsrIRCAL1">
        <property name="geometry">
         <rect>
@@ -4104,16 +4152,6 @@ master password!</string>
          <x>550</x>
          <y>280</y>
          <width>81</width>
-         <height>22</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QDateEdit" name="dateCalibration">
-       <property name="geometry">
-        <rect>
-         <x>550</x>
-         <y>340</y>
-         <width>111</width>
          <height>22</height>
         </rect>
        </property>
@@ -4429,12 +4467,10 @@ master password!</string>
       <zorder>label_125</zorder>
       <zorder>label_126</zorder>
       <zorder>label_127</zorder>
-      <zorder>label_128</zorder>
       <zorder>dsrIRCAL1</zorder>
       <zorder>dsrIRCAL2</zorder>
       <zorder>dsrIRCAL3</zorder>
       <zorder>dsrSurface</zorder>
-      <zorder>dateCalibration</zorder>
       <zorder>cmbWavelenght</zorder>
       <zorder>label_129</zorder>
       <zorder>line_27</zorder>

@@ -54,7 +54,7 @@ class Fluke:
 
     # Read the main heat output percent
     def FlukeOutpData(self):
-        data = '*OUTP:DATA?' + '\r'
+        data = 'OUTP:DATA?' + '\r'
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
@@ -63,7 +63,7 @@ class Fluke:
 
     # Read the Main Heat output
     def FlukeOutpStatRead(self):
-        data = '*OUTP:STAT?' + '\r'
+        data = 'OUTP:STAT?' + '\r'
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
@@ -81,11 +81,11 @@ class Fluke:
     # Read the program name by identifier
     # - n: 1 to 8
     def FlukeProgNameRead(self, n):
-        data = 'PROG:[' + str(n) + ']NAME?' + '\r'
+        data = 'PROG:' + str(n) + 'NAME?' + '\r'
         self.serialport.write(data.encode('ascii'))
-        time.sleep(0.5)
+        #time.sleep(0.5)
         response = self.serialport.readline().decode().strip()
-        print(f"Response: {response}")
+        #print(response)
         return response
 
 
@@ -93,7 +93,7 @@ class Fluke:
     # - n: 1 to 8
     # - name: characters 0 to 9, A to Z and -
     def FlukeProgNameSet(self, n, name):
-        data = 'PROG:[' + str(n) + ']NAME ' + name + '\r'
+        data = 'PROG:' + str(n) + 'NAME ' + name + '\r'
         self.serialport.write(data.encode('ascii'))
 
 
@@ -114,7 +114,7 @@ class Fluke:
         self.serialport.write(data.encode('ascii'))
 
 
-    # Read the program cyclesS
+    # Read the program cycles
     def FlukeProgOptCyclRead(self):
         data = 'PROG:OPT:CYCL?' + '\r'
         self.serialport.write(data.encode('ascii'))
@@ -174,7 +174,7 @@ class Fluke:
     # DIST = the distance from the target to the UUT in cm, 0.1 to 999.9
     # APER = yes or no to promt user for the aperature. 0 = none, 1 = prompt user
     def FlukeProgParParRead(self, n, par):
-        data = 'PROG[' + str(n) + ']PAR? ' + par + '?' + '\r'
+        data = 'PROG' + str(n) + ':PAR? ' + par + '?' + '\r'
         self.serialport.write(data.encode('ascii'))
         time.sleep(0.05)
         response = self.serialport.readline().decode().strip()
@@ -191,7 +191,7 @@ class Fluke:
     # DIST = the distance from the target to the UUT in cm, 0.1 to 999.9
     # APER = yes or no to promt user for the aperature. 0 = none, 1 = prompt user
     def FlukeProgParParSet(self, n, par, val):
-        data = 'PROG[' + str(n) + ']:PAR ' + par + ',' + str(val) + '\r'
+        data = 'PROG' + str(n) + ':PAR ' + par + ',' + str(val) + '\r'
         self.serialport.write(data.encode('ascii'))
 
 

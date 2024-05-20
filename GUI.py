@@ -156,10 +156,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.wavelengt = ["8-14um", "Undefined"]
 
         self.measurements = [] # Buffer for collected measurements - Measurements buffer
+        self.calibratorTemp = [] # Buffer for calibrator temperature
         self.times = [] # Buffer for measurements times - Time buffer
         self.sampleTime = 0
         self.timerCounter = 0
         self.sampleNumber = 0
+        self.standardDeviation = [] # buffer for standard deviation measurements
 
         # Date, TIme
         self.timer = QTimer(self)
@@ -210,15 +212,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.cmbBaudCalChange.addItems(self.baudRateCal)                # calibrator baud rate
         self.cmbWavelenght.addItems(self.wavelengt)                     # calibrator baud rate
         self.btnReadINFO.clicked.connect(self.calibratorInfo)           # save language settings
-        self.cmbProgramNum.currentIndexChanged.connect(self.readCalProgram)     # read selected program
-        self.cmbSelectProfile.currentIndexChanged.connect(self.selectProfile)   # read selected program
+        self.cmbProgramNum.currentIndexChanged.connect(self.readCalProgram) # read selected program
+        self.cmbSelectProfile.currentIndexChanged.connect(self.selectProfile) # read selected program
         self.btnAdvanceNext.clicked.connect(self.fluke.FlukeProgPromAdvSet) # save language settings
         self.btnStartCalibration.clicked.connect(self.startCalibration) # save language settings
-        self.btnStopHeating.clicked.connect(self.stopHeater) # turn off heater
-
-
-
-
+        self.btnStopHeating.clicked.connect(self.stopHeater)            # turn off heater
+        self.btnExportCalibration.clicked.connect(self.exportCSV)       # turn off heater
 
 
         # add picture 
@@ -246,10 +245,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         formatted_date = current_time.toString('dd.MM.yyyy')
         self.lblTime.setText(formatted_time)
         self.lblDate.setText(formatted_date)
-
-    
-    def stopHeater(self):
-        self.fluke.FlukeOutpStatSet(0)
 
 
     # Set camera mode #
@@ -284,9 +279,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Main tab widget
         if index == 0: # Measure tab
             #if self.calibratorStatus == 1:
-                
-            if self.cameraStatus == 1:
-                self.readCameraData()
+            return None
+            #if self.cameraStatus == 1:
+            #    self.readCameraData()
                 #self.readCameraInfo()
 
         if index == 1: # Camera tab
@@ -327,10 +322,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.dsrCyclesNo.setValue(int(response))
                 self.readCalProgram() # Read selected program
 
-            if index == 3: # SYSTEM MENU
+            if index == 2: # SYSTEM MENU
                 self.readSystemMenu()
 
-            if index == 4: # VIEW TEMP
+            if index == 3: # VIEW TEMP
                 val = self.fluke.FlukeSourSensDataRead()
                 self.lcBlockTemperature.display(float(val))
 
@@ -344,7 +339,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.fluke.FlukeProgOptSettSet(1)
         
         # soak time in minutes
-        val = self.dsrSoakTime.Value() 
+        val = self.dsrSoakTime.value() 
         self.fluke.FlukeProgOptSoakSet(val) 
         
         # Advance
@@ -355,7 +350,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.fluke.FlukeProgOptAdvSet(1)
 
         # cycles
-        val = self.dsrCyclesNo.Value() 
+        val = self.dsrCyclesNo.value() 
         self.fluke.FlukeProgOptCyclSet(val) 
         
 
@@ -365,6 +360,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         selectedProg = self.cmbProgramNum.currentText()
         #self.fluke.FlukeProgSelRead(int(selectedProg))
         name = self.fluke.FlukeProgNameRead(selectedProg)
+        name = name.replace('"', '') # delete "" in name
         self.lblProgName.setText(name)
         self.lblProgNum.setText(selectedProg)
         self.leProgName.setText(name)
@@ -373,7 +369,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.dsrSetProgIRT.setValue(float(val))
         val = self.fluke.FlukeProgParParRead(int(selectedProg), "DIST")
         if val == "": val = 0
-        self.dsrSetProgDistance.setValue(val)
+        self.dsrSetProgDistance.setValue(float(val))
         val = self.fluke.FlukeProgParParRead(int(selectedProg), "APER")
         self.cbProgAperture.setChecked(bool(val))
         steps = self.fluke.FlukeProgParParRead(int(selectedProg), "POIN")
@@ -399,7 +395,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if i == 7: self.dsrSP8.setEnabled(enable)
 
         for i in range(8):
-            if i < steps - 1:
+            if i < steps:
                 command = "SPO" + str(i + 1)
                 val = self.fluke.FlukeProgParParRead(int(selectedProg), command)
                 print("return", val)
@@ -442,7 +438,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def saveProgEdit(self):
         # select program by number
         selectedProg = self.cmbProgramNum.currentText()
-        name = self.lblProgName.text()
+        name = self.leProgName.text()
         self.fluke.FlukeProgNameSet(int(selectedProg), name)
         val = self.dsrSetProgIRT.value()
         self.fluke.FlukeProgParParSet(int(selectedProg), "IRTE", val)
@@ -485,10 +481,28 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.cbComa.setChecked(1)
         val = self.fluke.FlukeSystBeepKeybRead() # keyboard sound
         self.cbAudioOnOff.setChecked(int(val))
-        code = self.fluke.baudrate
+        code = self.fluke.serialport.baudrate
+        print("code",code)
         self.cmbBaudCalChange.setCurrentIndex(int(self.baudRateCal.index(str(code)))) # baud rate
         val = self.fluke.FlukeSystCommSerLinRead() # line feed
         self.cbLinefeed.setChecked(int(val))
+
+        val = self.fluke.FlukeSourCalParxRead(1) # read IRCAL1
+        self.dsrIRCAL1.setValue(float(val))
+        val = self.fluke.FlukeSourCalParxRead(2) # read IRCAL2
+        self.dsrIRCAL2.setValue(float(val))
+        val = self.fluke.FlukeSourCalParxRead(3) # read IRCAL2
+        self.dsrIRCAL3.setValue(float(val))
+
+        val = self.fluke.FlukeSourLconPbanRead() # PID - P
+        self.dsrPID_P.setValue(float(val))
+        val = self.fluke.FlukeSourLconIntRead() # PID - I
+        self.dsrPID_I.setValue(float(val))
+        val = self.fluke.FlukeSourLconDerRead() # PID - D
+        self.dsrPID_D.setValue(float(val))
+
+        val = self.fluke.FlukeSourCalWavRead() # wavelenght
+        self.cmbWavelenght.setCurrentIndex(int(val))
 
 
         
@@ -520,19 +534,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     
     # Flip check box for . and ,
     def flipComa(self):
-            self.cbPeriod.setChecked(False)
-            self.cbComa.setChecked(True)
+            self.cbPeriod.setChecked(not self.cbComa.isChecked())
 
     def flipPeriod(self):
-            self.cbComa.setChecked(False)
-            self.cbPeriod.setChecked(True)
+            self.cbComa.setChecked(not self.cbPeriod.isChecked())
+            
 
     
     # list calibrator info
     def calibratorInfo(self):
         id = self.fluke.FlukeID() # model
         self.lblModel.setText(id[:10])
-        self.lblSerial.setText(id[10:]) # serial
+        self.lblSerial.setText(id[11:]) # serial
         date = self.fluke.FlukeSourCalDateRead() # calib. data
         self.lblCalDate.setText(date)
         fw = self.fluke.FlukeSystCodVersRead() # fw version
@@ -543,12 +556,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def selectProfile(self):
         selectedProg = self.cmbSelectProfile.currentText()
         name = self.fluke.FlukeProgNameRead(int(selectedProg))
+        name = name.replace('"', '') # delete "" in name
         self.lblProgNameMeasurePage.setText(name)
-        response = self.fluke.FlukeProgOptAdvRead() # advance
-        if response == "1":
-            self.btnAdvanceNext.setEnabled(1)
-        else:
-            self.btnAdvanceNext.setEnabled(0)
+        #response = self.fluke.FlukeProgOptAdvRead() # advance
+        #if response == "0":
+        #    self.btnAdvanceNext.setEnabled(1)
+        #else:
+        #    self.btnAdvanceNext.setEnabled(0)
 
     
     # start calibration profile    
@@ -562,7 +576,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.btnStartCalibration.setText("Stop")
                 self.calibration = 1
                 # start calibrator
-        #else:
+                selectedProg = self.cmbSelectProfile.currentText()
+                self.fluke.FlukeProgSelSet(int(selectedProg))
+                self.fluke.FlukeProgStatSet(1)
+        else:
+            self.fluke.FlukeProgStatSet(0)
+            self.sampleMeas()
+            self.btnStartCalibration.setText("Start")
 
 
     # turn on the calibrator
@@ -572,6 +592,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         val = self.dsbSetpoint.value()
         self.fluke.FlukeSourSpoSet(val)
         self.fluke.FlukeOutpStatSet(1)
+
+    
+    # turn off calibrator
+    def stopHeater(self):
+        self.fluke.FlukeOutpStatSet(0)
 
 
     # Set alarm values #
@@ -804,19 +829,57 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             return None
 
         val = float(val[3:]) # clean data
-        #print(val)
         self.timerCounter += self.sampleTime
         self.measurements.append(val) # Add measurement to buffer
+        self.standardDeviation.append(val) # add measurement to standard deviation buffer
         self.times.append(self.timerCounter) # Add times to time buffer
+
+        # Read fluke temp
+        val = self.fluke.FlukeOutpStatRead()
+        val = float(val)
+        self.dsbSetpoint.setValue(val)
+        self.calibratorTemp.append(val)
+        # time is the same as camera
+
+        # calculate standard deviation
+        if len(self.standardDeviation) == 10:
+            val = 0
+            maxVal = max(self.standardDeviation)
+            minVal = min(self.standardDeviation)
+            delta = maxVal- minVal
+            if delta < 2:
+                # Add std calculation
+                val = np.std(self.standardDeviation)
+                self.lcdStandardDeviation.display(val)
+                self.standardDeviation.clear() # clear all saved measurements
+            else:
+                self.lcdStandardDeviation.display(0)
+                self.standardDeviation.clear() # clear all saved measurements
+
+        # fluke temp e=0.95 (last widget)
+        val = self.fluke.FlukeSourSensDataRead()
+        self.lcBlockTemperature.display(float(val))
+        
         # Plot drawing
         self.graph.clear()
         self.graph.set_xlabel('Time [s]')
         self.graph.set_ylabel('Temp. [°C]')
-        self.graph.plot(self.times, self.measurements, label='Temperature')
+        self.graph.plot(self.times, self.measurements, label='Camera', color = 'Red')
+        self.graph.plot(self.times, self.calibratorTemp, label='Calibrator', color = 'Blue')
         self.graph.grid()
         self.graph.legend()
         self.canvas.draw()
         self.figure.tight_layout()
+
+        # Detect if the calibrator needs advance command
+        val = self.fluke.FlukeProgPromStatRead()
+        if val == '0':
+            self.btnAdvanceNext.setEnabled(0)
+        else:
+            self.btnAdvanceNext.setEnabled(1)
+
+
+
 
     
     # Read status data of cyclops cymera
@@ -989,6 +1052,7 @@ class StartWindow:
     def OpenMainWindow(self):
         selectedBaud = self.form.cmbBaud.currentText()
         selectedPort = self.form.cmbPorts.currentText()
+        #self.mainWindow.show() # BRIŠI
         
         if selectedPort == "" or selectedBaud == "":
             self.errorWindow.show() # ERROR - unselected baud or port
