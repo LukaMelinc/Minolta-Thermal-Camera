@@ -185,7 +185,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.cbLowerAlarm.stateChanged.connect(self.grayOut)            # Grayout alarm settings if not enabled
         self.btnConnectCal.clicked.connect(self.calibratorConnect)      # Connect to calibrator
         self.btnSetEmisivity.clicked.connect(self.setEmisivityCamera)   # Set emisivity
-        self.btnExport.clicked.connect(self.exportCSV)                  # Export measurements in CSV file
+        self.btnExport.clicked.connect(self.exportCSVMeas)              # Export measurements in CSV file
         self.btnRecord.clicked.connect(self.recordMeas)                 # Record measurements
         self.btnStartSample.clicked.connect(self.sampleMeas)            # Start measuring - sample
         self.btnCameraStatusRead.clicked.connect(self.readCameraData)   # Read camera data
@@ -217,7 +217,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btnAdvanceNext.clicked.connect(self.fluke.FlukeProgPromAdvSet) # save language settings
         self.btnStartCalibration.clicked.connect(self.startCalibration) # save language settings
         self.btnStopHeating.clicked.connect(self.stopHeater)            # turn off heater
-        self.btnExportCalibration.clicked.connect(self.exportCSV)       # turn off heater
+        self.btnExportCalibration.clicked.connect(self.exportCSVCalib)  # turn off heater
 
 
         # add picture 
@@ -989,13 +989,22 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     
 
     # Save measurements to CSV file
-    def exportCSV(self): # lists of times and measurement values
+    def exportCSVMeas(self): # lists of times and measurement values
         filename = time.strftime("%Y_%m_%d-%H_%M-meritve")
         with open(str(filename) + '.csv', 'w', newline='') as file:
             writer = csv.writer(file, delimiter=';')
             writer.writerow(['Time', 'Temp.'])
             for time_val, temp_val in zip(self.times, self.measurements):
-                writer.writerow([time_val, temp_val]) 
+                writer.writerow([time_val, temp_val])
+
+    # Save measurements to CSV file
+    def exportCSVCalib(self): # lists of times and measurement values
+        filename = time.strftime("%Y_%m_%d-%H_%M-meritve")
+        with open(str(filename) + '.csv', 'w', newline='') as file:
+            writer = csv.writer(file, delimiter=';')
+            writer.writerow(['Time', 'Camera_Temp.', 'Calibrator_Temp.'])
+            for time_val, temp_val, temp_cal_val in zip(self.times, self.measurements, self.calibratorTemp):
+                writer.writerow([time_val, temp_val, temp_cal_val]) 
 
 
     # Close application #
