@@ -129,21 +129,21 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.recordThread = threading.Thread()
         self.stopEvent = threading.Event()
 
-        self.errorWindow = ErrorWindow() # Error for connection on calibrator
-        self.focusWindow = FocusWindow() # Report window after focusing
-        self.E34Window = E34Window()     # Error in communication
+        self.errorWindow = ErrorWindow()         # Error for connection on calibrator
+        self.focusWindow = FocusWindow()         # Report window after focusing
+        self.E34Window = E34Window()             # Error in communication
         self.connectedWindow = ConnectedWindow() # Succesfuly connected
-        self.reportWindow = ReportWindow() # Succesfuly connected
+        self.reportWindow = ReportWindow()       # Succesfuly connected
 
         # Variables
         self.ports = []
         self.portsDescription = []
         self.baudRate = ["4800", "9600", "19200", "38400", "57600", "115200", "230400", "460800", "921600"]
-        self.calibratorStatus = 0 # is connected or not
-        self.cameraStatus = 0 # is connected or not
-        self.recording = 0 # record button / monitor mode
-        self.sample = 0 # automatic measurements
-        self.calibration = 0 # state of calibration process
+        self.calibratorStatus = 0   # is connected or not
+        self.cameraStatus = 0       # is connected or not
+        self.recording = 0          # record button / monitor mode
+        self.sample = 0             # automatic measurements
+        self.calibration = 0        # state of calibration process
         self.CameraMode = ["Normal", "Average", "Peak", "Valley"]
 
         self.CalibratorProgNum = ["1", "2", "3", "4", "5", "6", "7", "8"]
@@ -155,9 +155,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.baudRateCal = ["1200", "2400", "4800", "9600", "19200", "38400"]
         self.wavelengt = ["8-14um", "Undefined"]
 
-        self.measurements = [] # Buffer for collected measurements - Measurements buffer
-        self.calibratorTemp = [] # Buffer for calibrator temperature
-        self.times = [] # Buffer for measurements times - Time buffer
+        self.measurements = []      # Buffer for collected measurements - Measurements buffer
+        self.calibratorTemp = []    # Buffer for calibrator temperature
+        self.times = []             # Buffer for measurements times - Time buffer
         self.sampleTime = 0
         self.timerCounter = 0
         self.sampleNumber = 0
@@ -166,7 +166,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Date, TIme
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.updateTime)
-        self.timer.start(1000)  # 1000 milliseconds (1 second)
+        self.timer.start(1000)      # 1000 milliseconds (1 second)
         self.updateTime()
 
         # GUI
@@ -174,8 +174,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.tabFluke.setCurrentIndex(0)
         self.btnRefreshCal.clicked.connect(self.list_serial_ports)      # Refresh button 
         self.btnRefreshCam.clicked.connect(self.list_serial_ports)      # Refresh button 
-        self.cmbBaudCal.addItems(self.baudRateCal)                         # BaudRate combo box - fluke
-        self.cmbBaudCam.addItems(self.baudRate)                      # BaudRate combo box - cyclopse
+        self.cmbBaudCal.addItems(self.baudRateCal)                      # BaudRate combo box - fluke
+        self.cmbBaudCam.addItems(self.baudRate)                         # BaudRate combo box - cyclopse
         self.btnExit.clicked.connect(self.appExit)                      # Exit
         self.cmbCamMode.addItems(self.CameraMode)                       # Measuring modes of camera
         self.btnAutofocus.clicked.connect(self.focus)                   # Triger auto focus of camera
@@ -199,13 +199,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.cmbSettle.addItems(self.settleTest)                        # set settle options
         self.cmbProgAdvance.addItems(self.advance)                      # program advance options
         self.cmbProgramNum.addItems(self.CalibratorProgNum)             # program number
-        self.dsrSetProgStepNum.valueChanged.connect(self.setSteps)# read selected program 
+        self.dsrSetProgStepNum.valueChanged.connect(self.setSteps)      # read selected program 
         self.cmbLanguage.addItems(self.languages)                       # program language
         self.btnSaveDisplay.clicked.connect(self.saveLanguage)          # save language settings
         self.cbPeriod.stateChanged.connect(self.flipPeriod)             # select coma or period
         self.cbComa.stateChanged.connect(self.flipComa)                 # select coma or period 
         self.cmbSelectProfile.addItems(self.CalibratorProgNum)          # list programs in measure tab
-        self.btnSetSetpoint.clicked.connect(self.setSetpoint)          # set calibrator setpoint
+        self.btnSetSetpoint.clicked.connect(self.setSetpoint)           # set calibrator setpoint
         self.btnSaveProgramOpt.clicked.connect(self.saveProgOprions)    # save language settings
         self.btnSaveProgramEdit.clicked.connect(self.saveProgEdit)      # save language settings
         self.cmbProtection.addItems(self.passwordProtection)            # password enable
@@ -227,6 +227,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # Graph
         self.figure, self.graph = plt.subplots()
+
+        # dashed lines
+        self.mean_line = self.graph.axhline(np.mean(self.measurements), color='b', linestyle='dashed', linewidth=2, label='Mean')
+        self.std_dev1_lines = [
+            self.graph.axhline(np.mean(self.measurements) - np.std(self.measurements), color='r', linestyle='dashed', linewidth=2, label='±1σ'),
+            self.graph.axhline(np.mean(self.measurements) + np.std(self.measurements), color='r', linestyle='dashed', linewidth=2)
+        ]
+        self.std_dev2_lines = [
+            self.graph.axhline(np.mean(self.measurements) - 2 * np.std(self.measurements), color='m', linestyle='dashed', linewidth=2, label='±2σ'),
+            self.graph.axhline(np.mean(self.measurements) + 2 * np.std(self.measurements), color='m', linestyle='dashed', linewidth=2)
+        ]
+
         self.canvas = FigureCanvas(self.figure)
         layout = QVBoxLayout(self.graphWidget)
         layout.addWidget(self.canvas)
@@ -278,11 +290,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def tabMainChange(self, index):
         # Main tab widget
         if index == 0: # Measure tab
-            #if self.calibratorStatus == 1:
-            return None
-            #if self.cameraStatus == 1:
-            #    self.readCameraData()
-                #self.readCameraInfo()
+            if self.calibratorStatus == 1:
+                val = self.fluke.FlukeOutpStatRead()
+                self.dsbSetpoint.setValue(val)
+
+            if self.cameraStatus == 1:
+                self.readCameraInfo()
 
         if index == 1: # Camera tab
             if self.cameraStatus == 1:
@@ -305,8 +318,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.cbStableAlarm.setChecked(int(response))
                 response = self.fluke.FlukeSourEmisRead() # emisivity
                 self.dsrSetIRT.setValue(float(response))
-                response = self.fluke.FlukeSourProtScutLevRead() # soft cutout
-                print(response)
+                response = self.fluke.FlukeSourProtScutLevRead() # soft cutout !
                 if response == "": response = 0
                 self.dsbSoftCutout.setValue(float(response))
                 response = self.fluke.FlukeSourProtHcutRead() # hard cutout
@@ -356,6 +368,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     # Read selected program parameter         
     def readCalProgram(self):
+        if self.calibratorStatus == 0: return None # Calibrator not connected
+
         # select program by number
         selectedProg = self.cmbProgramNum.currentText()
         #self.fluke.FlukeProgSelRead(int(selectedProg))
@@ -412,6 +426,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if i == 7: self.dsrSP8.setValue(val)
             #time.sleep(0.05)
 
+
+    # Grayout setpoints
     def setSteps(self):
         steps = self.dsrSetProgStepNum.value()
         if steps == "" or steps == 0: 
@@ -505,9 +521,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.cmbWavelenght.setCurrentIndex(int(val))
 
 
-        
-
-
     # set soft cutout temperature - PROTECTED WITH PASSWORD
     def saveLanguage(self):
         language = self.cmbLanguage.currentText()
@@ -524,7 +537,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.fluke.FlukeSystBeepKeybSet(0)
 
     
-
     # Set scan parameters
     def setScan(self):
         self.fluke.FlukeSourRateSet(self.dsbScanRate.value())
@@ -539,7 +551,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def flipPeriod(self):
             self.cbComa.setChecked(not self.cbPeriod.isChecked())
             
-
     
     # list calibrator info
     def calibratorInfo(self):
@@ -587,8 +598,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     # turn on the calibrator
     def setSetpoint(self):
-        # FlukeOutpStatRead
-        # FlukeOutpData
         val = self.dsbSetpoint.value()
         self.fluke.FlukeSourSpoSet(val)
         self.fluke.FlukeOutpStatSet(1)
@@ -645,6 +654,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     self.btnConnectCal.setText("Disconnect")
                     self.calibratorStatus = 1
                     self.fluke.FlukeRegisterReset()
+                    self.fluke.FlukeSourProtCleaReset()
         else:
             report = self.fluke.FlukeCloseSerial()
             if report != None:
@@ -835,6 +845,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.times.append(self.timerCounter) # Add times to time buffer
 
         # Read fluke temp
+        percent = self.fluke.FlukeOutpData()
+        self.pbHeater.setValue(int(percent)) # heater progres bar
         val = self.fluke.FlukeOutpStatRead()
         val = float(val)
         self.dsbSetpoint.setValue(val)
@@ -859,6 +871,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # fluke temp e=0.95 (last widget)
         val = self.fluke.FlukeSourSensDataRead()
         self.lcBlockTemperature.display(float(val))
+
+        # Additional values on graph
+        mean = np.mean(self.measurements)
+        std_dev = np.std(self.measurements)
+
+        self.mean_line.set_ydata(mean)
+        self.std_dev1_lines[0].set_ydata(mean - std_dev)
+        self.std_dev1_lines[1].set_ydata(mean + std_dev)
+        self.std_dev2_lines[0].set_ydata(mean - 2 * std_dev)
+        self.std_dev2_lines[1].set_ydata(mean + 2 * std_dev)
         
         # Plot drawing
         self.graph.clear()
@@ -879,9 +901,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.btnAdvanceNext.setEnabled(1)
 
 
-
-
-    
     # Read status data of cyclops cymera
     def readCameraData(self):
         response = self.cyclops.CyclopsStatusRead()
@@ -968,6 +987,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def setCutout(self):
         return None
 
+
     # List all available serial ports #
     def list_serial_ports(self):
         ports = serial.tools.list_ports.comports()
@@ -996,6 +1016,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             writer.writerow(['Time', 'Temp.'])
             for time_val, temp_val in zip(self.times, self.measurements):
                 writer.writerow([time_val, temp_val])
+
 
     # Save measurements to CSV file
     def exportCSVCalib(self): # lists of times and measurement values
@@ -1057,6 +1078,7 @@ class StartWindow:
     def appExit(self):
         sys.exit() # dont call it directly
 
+
     # Open main window or error #
     def OpenMainWindow(self):
         selectedBaud = self.form.cmbBaud.currentText()
@@ -1080,6 +1102,7 @@ class StartWindow:
                 self.window.close()
             else:
                 self.errorWindow.show() # ERROR - unselected baud or port
+
 
    # List all available serial ports #
     def list_serial_ports(self):

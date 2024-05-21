@@ -422,7 +422,7 @@ class Fluke:
 
     # Reset the cutout to enable the system
     def FlukeSourProtCleaReset(self):
-        data = 'SOUR:PROT:CLEAR' + '\r'
+        data = 'SOUR:PROT:CLEA' + '\r'
         self.serialport.write(data.encode('ascii'))
 
     
