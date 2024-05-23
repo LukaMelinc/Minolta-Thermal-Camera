@@ -61,7 +61,7 @@ class Fluke:
         print(f"Response: {response}")
 
 
-    # Read the Main Heat output
+    # Read the Main Heat output (0|1)
     def FlukeOutpStatRead(self):
         data = 'OUTP:STAT?' + '\r'
         self.serialport.write(data.encode('ascii'))

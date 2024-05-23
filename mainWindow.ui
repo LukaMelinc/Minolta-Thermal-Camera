@@ -254,6 +254,9 @@
      </property>
     </widget>
     <widget class="QPushButton" name="btnExport">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
      <property name="geometry">
       <rect>
        <x>1080</x>
@@ -677,6 +680,9 @@
      </property>
     </widget>
     <widget class="QPushButton" name="btnExportCalibration">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
      <property name="geometry">
       <rect>
        <x>1090</x>
@@ -707,13 +713,13 @@
       </font>
      </property>
      <property name="decimals">
-      <number>1</number>
+      <number>2</number>
      </property>
      <property name="minimum">
-      <double>0.100000000000000</double>
+      <double>0.000000000000000</double>
      </property>
      <property name="maximum">
-      <double>100.000000000000000</double>
+      <double>500.000000000000000</double>
      </property>
      <property name="singleStep">
       <double>0.100000000000000</double>

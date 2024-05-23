@@ -228,7 +228,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Graph
         self.figure, self.graph = plt.subplots()
 
-        # dashed lines
+        """# dashed lines
         self.mean_line = self.graph.axhline(np.mean(self.measurements), color='b', linestyle='dashed', linewidth=2, label='Mean')
         self.std_dev1_lines = [
             self.graph.axhline(np.mean(self.measurements) - np.std(self.measurements), color='r', linestyle='dashed', linewidth=2, label='±1σ'),
@@ -237,7 +237,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.std_dev2_lines = [
             self.graph.axhline(np.mean(self.measurements) - 2 * np.std(self.measurements), color='m', linestyle='dashed', linewidth=2, label='±2σ'),
             self.graph.axhline(np.mean(self.measurements) + 2 * np.std(self.measurements), color='m', linestyle='dashed', linewidth=2)
-        ]
+        ]"""
 
         self.canvas = FigureCanvas(self.figure)
         layout = QVBoxLayout(self.graphWidget)
@@ -292,10 +292,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if index == 0: # Measure tab
             if self.calibratorStatus == 1:
                 val = self.fluke.FlukeOutpStatRead()
-                self.dsbSetpoint.setValue(val)
+                if val == "" or val == None: val = 0
+                self.dsbSetpoint.setValue(float(val))
 
-            if self.cameraStatus == 1:
-                self.readCameraInfo()
+            #if self.cameraStatus == 1:
+            #    self.readCameraInfo()
 
         if index == 1: # Camera tab
             if self.cameraStatus == 1:
@@ -569,31 +570,34 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         name = self.fluke.FlukeProgNameRead(int(selectedProg))
         name = name.replace('"', '') # delete "" in name
         self.lblProgNameMeasurePage.setText(name)
-        #response = self.fluke.FlukeProgOptAdvRead() # advance
-        #if response == "0":
-        #    self.btnAdvanceNext.setEnabled(1)
-        #else:
-        #    self.btnAdvanceNext.setEnabled(0)
 
     
     # start calibration profile    
     def startCalibration(self):
-        if self.calibration == 0:
-            if self.sample == 1:
-                self.sampleMeas() # stop sampling event
-                self.sampleMeas() # start sampling event
+        text = self.lblProgNameMeasurePage.text()
+
+        if  text != 'NaN':
+                        
+            if self.calibration == 0:
+                if self.sample == 1:
+                    self.sampleMeas() # stop sampling event
+                    self.sampleMeas() # start sampling event
+                else:
+                    response =self.sampleMeas() # start sampling event
+                    if response == -1: return None
+                    self.btnStartCalibration.setText("Stop")
+                    self.calibration = 1
+                    # start calibrator
+                    selectedProg = self.cmbSelectProfile.currentText()
+                    self.fluke.FlukeProgSelSet(int(selectedProg))
+                    self.fluke.FlukeProgStatSet(1)
+                #self.btnExportCalibration.setEnable(0) # Dodano
+
             else:
-                self.sampleMeas() # start sampling event
-                self.btnStartCalibration.setText("Stop")
-                self.calibration = 1
-                # start calibrator
-                selectedProg = self.cmbSelectProfile.currentText()
-                self.fluke.FlukeProgSelSet(int(selectedProg))
-                self.fluke.FlukeProgStatSet(1)
-        else:
-            self.fluke.FlukeProgStatSet(0)
-            self.sampleMeas()
-            self.btnStartCalibration.setText("Start")
+                self.fluke.FlukeProgStatSet(0)
+                self.sampleMeas()
+                self.btnStartCalibration.setText("Start")
+                #self.btnExportCalibration.setEnable(1)# Dodano
 
 
     # turn on the calibrator
@@ -793,6 +797,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.sample = 0
                 self.btnStartSample.setText("Start")
                 self.timerSample.cancel()  # Stop the timer
+                return -1
             self.sampleTime = self.dsbSampleTime.value()
             self.sample = 1
             if self.cbTimerOnOff.isChecked() == True:
@@ -805,11 +810,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.btnStartSample.setText("Stop")
             self.cmbCamMode.setCurrentIndex(index)
             self.RepeatFunctionSample(self.sampleTime, self.MeasureSample) # Call my_function every n seconds
+            #self.btnExport.setEnable(0) # Dodano
             return None
-        if self.sample == 1:
+        if self.sample == 1 and self.lblProgNameMeasurePage.text() != "NaN":
             self.sample = 0
             self.btnStartSample.setText("Start")
             self.timerSample.cancel()  # Stop the timer
+            #self.btnExport.setEnable(1) # Dodano
             return None
         
 
@@ -846,11 +853,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # Read fluke temp
         percent = self.fluke.FlukeOutpData()
+        if percent == ""or percent == None: percent = 0
         self.pbHeater.setValue(int(percent)) # heater progres bar
-        val = self.fluke.FlukeOutpStatRead()
-        val = float(val)
-        self.dsbSetpoint.setValue(val)
-        self.calibratorTemp.append(val)
+        val = self.fluke.FlukeSourSensDataRead() # read the fluke temperature
+        if val == "" or val == None: val = 0
+        calTemp = float(val)
+        self.dsbSetpoint.setValue(calTemp)
+        self.calibratorTemp.append(calTemp)
         # time is the same as camera
 
         # calculate standard deviation
@@ -872,7 +881,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         val = self.fluke.FlukeSourSensDataRead()
         self.lcBlockTemperature.display(float(val))
 
-        # Additional values on graph
+        # Additional values on 
+        """
         mean = np.mean(self.measurements)
         std_dev = np.std(self.measurements)
 
@@ -881,13 +891,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.std_dev1_lines[1].set_ydata(mean + std_dev)
         self.std_dev2_lines[0].set_ydata(mean - 2 * std_dev)
         self.std_dev2_lines[1].set_ydata(mean + 2 * std_dev)
+        """
         
         # Plot drawing
         self.graph.clear()
         self.graph.set_xlabel('Time [s]')
         self.graph.set_ylabel('Temp. [°C]')
         self.graph.plot(self.times, self.measurements, label='Camera', color = 'Red')
-        self.graph.plot(self.times, self.calibratorTemp, label='Calibrator', color = 'Blue')
+        #self.graph.plot(self.times, self.calibratorTemp, label='Calibrator', color = 'Blue')
         self.graph.grid()
         self.graph.legend()
         self.canvas.draw()
@@ -911,7 +922,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             elif splitValue[0] == "F":
                 self.lblUnits.setText("°F")
             emisivity = splitValue[1] + splitValue[2] + splitValue[3] + splitValue[4]
-            self.lblEmisivity.setText(emisivity)
+            self.lblEmisivity.setText(str(emisivity))
             self.dsbCameraEmisivity.setValue(float(emisivity))
             if splitValue[5] == "H":
                 self.lblMeasurMode.setText("Manual")
