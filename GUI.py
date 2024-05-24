@@ -228,7 +228,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Graph
         self.figure, self.graph = plt.subplots()
 
-        """# dashed lines
+        # dashed lines
+        """
         self.mean_line = self.graph.axhline(np.mean(self.measurements), color='b', linestyle='dashed', linewidth=2, label='Mean')
         self.std_dev1_lines = [
             self.graph.axhline(np.mean(self.measurements) - np.std(self.measurements), color='r', linestyle='dashed', linewidth=2, label='±1σ'),
@@ -237,7 +238,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.std_dev2_lines = [
             self.graph.axhline(np.mean(self.measurements) - 2 * np.std(self.measurements), color='m', linestyle='dashed', linewidth=2, label='±2σ'),
             self.graph.axhline(np.mean(self.measurements) + 2 * np.std(self.measurements), color='m', linestyle='dashed', linewidth=2)
-        ]"""
+        ]
+        """
 
         self.canvas = FigureCanvas(self.figure)
         layout = QVBoxLayout(self.graphWidget)
@@ -413,7 +415,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if i < steps:
                 command = "SPO" + str(i + 1)
                 val = self.fluke.FlukeProgParParRead(int(selectedProg), command)
-                print("return", val)
+                #print("return", val)
                 val = float(val)
             else:
                 val = 0
@@ -499,7 +501,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         val = self.fluke.FlukeSystBeepKeybRead() # keyboard sound
         self.cbAudioOnOff.setChecked(int(val))
         code = self.fluke.serialport.baudrate
-        print("code",code)
         self.cmbBaudCalChange.setCurrentIndex(int(self.baudRateCal.index(str(code)))) # baud rate
         val = self.fluke.FlukeSystCommSerLinRead() # line feed
         self.cbLinefeed.setChecked(int(val))
@@ -582,8 +583,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 if self.sample == 1:
                     self.sampleMeas() # stop sampling event
                     self.sampleMeas() # start sampling event
+                    if response == -1: return None
                 else:
-                    response =self.sampleMeas() # start sampling event
+                    response = self.sampleMeas() # start sampling event
                     if response == -1: return None
                     self.btnStartCalibration.setText("Stop")
                     self.calibration = 1
@@ -791,13 +793,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     # Read temperature in sample mode
     def sampleMeas(self):
         if self.sample == 0:
-            self.measurements.clear() # clear measurements buffer
-            self.times.clear() # clear times buffer
             if self.focus() != "OK!":
                 self.sample = 0
                 self.btnStartSample.setText("Start")
-                self.timerSample.cancel()  # Stop the timer
+                #self.timerSample.cancel()  # Stop the timer
                 return -1
+            
+            self.measurements.clear() # clear measurements buffer
+            self.times.clear() # clear times buffer
             self.sampleTime = self.dsbSampleTime.value()
             self.sample = 1
             if self.cbTimerOnOff.isChecked() == True:
@@ -812,10 +815,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.RepeatFunctionSample(self.sampleTime, self.MeasureSample) # Call my_function every n seconds
             #self.btnExport.setEnable(0) # Dodano
             return None
-        if self.sample == 1 and self.lblProgNameMeasurePage.text() != "NaN":
+        if self.sample == 1 or self.lblProgNameMeasurePage.text() != "NaN":
             self.sample = 0
             self.btnStartSample.setText("Start")
             self.timerSample.cancel()  # Stop the timer
+            self.pbHeater.setValue(0) # heater progres bar
             #self.btnExport.setEnable(1) # Dodano
             return None
         
@@ -837,6 +841,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             else:
                 self.sampleNumber -= 1
 
+        val = "0"
         val = self.cyclops.CyclopsGetTemp()
         if val == "":
             self.sample = 0
@@ -853,8 +858,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # Read fluke temp
         percent = self.fluke.FlukeOutpData()
-        if percent == ""or percent == None: percent = 0
-        self.pbHeater.setValue(int(percent)) # heater progres bar
+        if percent == "" or percent == None: percent = 0
+        percent_int = int(float(percent))
+        self.pbHeater.setValue(percent_int) # heater progres bar
         val = self.fluke.FlukeSourSensDataRead() # read the fluke temperature
         if val == "" or val == None: val = 0
         calTemp = float(val)
@@ -864,7 +870,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # calculate standard deviation
         if len(self.standardDeviation) == 10:
-            val = 0
+            """val = 0
             maxVal = max(self.standardDeviation)
             minVal = min(self.standardDeviation)
             delta = maxVal- minVal
@@ -875,17 +881,22 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.standardDeviation.clear() # clear all saved measurements
             else:
                 self.lcdStandardDeviation.display(0)
-                self.standardDeviation.clear() # clear all saved measurements
+                self.standardDeviation.clear() # clear all saved measurements"""
+            
+            # Calculate std with no limitss
+            val = np.std(self.standardDeviation)
+            self.lcdStandardDeviation.display(val)
+            self.standardDeviation.clear() # clear all saved measurements
 
         # fluke temp e=0.95 (last widget)
         val = self.fluke.FlukeSourSensDataRead()
         self.lcBlockTemperature.display(float(val))
 
         # Additional values on 
-        """
         mean = np.mean(self.measurements)
         std_dev = np.std(self.measurements)
 
+        """
         self.mean_line.set_ydata(mean)
         self.std_dev1_lines[0].set_ydata(mean - std_dev)
         self.std_dev1_lines[1].set_ydata(mean + std_dev)
@@ -893,12 +904,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.std_dev2_lines[1].set_ydata(mean + 2 * std_dev)
         """
         
+        
         # Plot drawing
         self.graph.clear()
         self.graph.set_xlabel('Time [s]')
         self.graph.set_ylabel('Temp. [°C]')
         self.graph.plot(self.times, self.measurements, label='Camera', color = 'Red')
-        #self.graph.plot(self.times, self.calibratorTemp, label='Calibrator', color = 'Blue')
+        self.graph.plot(self.times, self.calibratorTemp, label='Calibrator', color = 'Blue')
         self.graph.grid()
         self.graph.legend()
         self.canvas.draw()
@@ -906,10 +918,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # Detect if the calibrator needs advance command
         val = self.fluke.FlukeProgPromStatRead()
-        if val == '0':
-            self.btnAdvanceNext.setEnabled(0)
-        else:
+        if val == '1':
             self.btnAdvanceNext.setEnabled(1)
+        else:
+            self.btnAdvanceNext.setEnabled(0)
 
 
     # Read status data of cyclops cymera

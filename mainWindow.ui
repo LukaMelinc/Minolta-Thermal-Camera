@@ -617,7 +617,7 @@
     <widget class="QLabel" name="label_34">
      <property name="geometry">
       <rect>
-       <x>980</x>
+       <x>965</x>
        <y>330</y>
        <width>81</width>
        <height>21</height>
@@ -701,7 +701,7 @@
      </property>
      <property name="geometry">
       <rect>
-       <x>1070</x>
+       <x>1055</x>
        <y>330</y>
        <width>81</width>
        <height>22</height>
@@ -731,7 +731,7 @@
     <widget class="QLabel" name="label_36">
      <property name="geometry">
       <rect>
-       <x>1155</x>
+       <x>1140</x>
        <y>330</y>
        <width>21</width>
        <height>21</height>
@@ -4542,6 +4542,9 @@ master password!</string>
        </property>
        <property name="frameShadow">
         <enum>QFrame::Raised</enum>
+       </property>
+       <property name="smallDecimalPoint">
+        <bool>false</bool>
        </property>
        <property name="digitCount">
         <number>3</number>
