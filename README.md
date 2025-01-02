@@ -1,2 +1,3 @@
-Seminarska naloga pri predmetu Avtomatizirani virtualni merilni sistemi na drugi stopnji študija elektrotehnike na ULFE - Avtomatika in Informatika. 
-Program je namenjen komunikaciji s pirometrom in kalibratorejm (uporabljenega za testiranje meritev). Omogoča spreminjanje nastavitev, izvajanje meritev in njihovo analizo.
+This was a project for the AVMS course at FEUL spring semmester 24'.
+The code is used for communication with the calibrator and the camera and offers a set of possible commands.
+The code also includes a desktop GUI for control and test execution.
